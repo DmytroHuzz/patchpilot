@@ -253,3 +253,11 @@
 - Remapped the detect slide to `02-investigate.jpg`, whose viewport centers the actual deterministic finding: advisory title, severity, package, installed version, advisory ID, fixed versions, affected range, and OSV-Scanner attribution.
 - Narration, timing, product behavior, and publication lock are unchanged. Scope expansions: none.
 - The corrected cut passed media verification at 2:18.17, 1280×720, H.264 video plus one mono AAC track, 16,934,512 bytes. SHA-256: `5a605d11dc0d927ac15b54be3f36b520dcac202e5da61648ab054f282cb46862`.
+
+## 2026-07-18 — Issue 17 partial: unlisted YouTube upload
+
+- User explicitly authorized uploading the corrected review MP4 through the active YouTube account. Chose unlisted visibility as the reversible Devpost-ready default; changing it to public remains separately approval-gated.
+- The first Chrome file handoff was blocked because the browser extension lacked file-URL access. After the user enabled that permission, the same prepared YouTube Studio upload resumed successfully.
+- Uploaded the verified local artifact to the `NewMedia` channel with title `PatchPilot — Human-Reviewed Dependency Patching | OpenAI Build Week`, the golden-path description, repository link, and synthetic-narration disclosure. Audience is set to not made for kids.
+- YouTube confirmed `Video published` at <https://youtu.be/9PyrTSgSAhU>. Upload and SD processing completed; the copyright check continued in the background when the unlisted visibility was saved.
+- Issue #17 remains open. Public visibility, Devpost mutation, `/feedback`, and the final submission checklist are not complete.

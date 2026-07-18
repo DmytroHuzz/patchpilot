@@ -256,6 +256,6 @@ The project also builds on OpenAI’s JavaScript SDK, React, Vite, Zod, Vitest, 
 
 ## Roadmap
 
-Before submission, the only active work is the public video and submission package. The timed script and three consecutive golden-path rehearsals are complete; no new product feature enters the freeze path.
+Before submission, the only active work is changing the uploaded [unlisted demo video](https://youtu.be/9PyrTSgSAhU) to public when approved and completing the submission package. The timed script and three consecutive golden-path rehearsals are complete; no new product feature enters the freeze path.
 
 Post-hackathon possibilities include safe arbitrary-local-npm onboarding, advisory-independent patch contracts, optional approval-gated draft PR publication, multi-advisory triage, Dependabot ingestion, more ecosystems, runtime evidence, and team workflows. They are ideas—not implemented support or commitments. See [Roadmap](docs/roadmap.md).

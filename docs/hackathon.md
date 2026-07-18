@@ -56,7 +56,7 @@ Issue #16 completed the 2:55 narration, exact 11-click storyboard, three consecu
 - Main Codex task `/feedback` reference and retained task ID.
 - Green CI, repeatable reset, three successful rehearsals, and final pre-deadline checklist.
 
-A local 2:22.67 H.264/AAC review cut and its reproducible render sources are available through [Submission video assets](../submission/README.md). Public upload and the final video URL remain pending explicit review and approval.
+The corrected 2:18.17 H.264/AAC cut is available as an [unlisted YouTube review video](https://youtu.be/9PyrTSgSAhU), with reproducible render sources documented under [Submission video assets](../submission/README.md). Changing visibility to public remains explicitly approval-gated.
 
 ## Submission checklist
 
