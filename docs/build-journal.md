@@ -298,3 +298,11 @@
 - Devpost returned submission ID `1102235`, status `Submitted`, and timestamp `2026-07-18T12:51:39.223-04:00`. Post-submit readback reports project state `published`, the OpenAI Build Week relationship with the same submission timestamp, and <https://devpost.com/software/patchpilot-ord9wl> as the project URL.
 - Confirmed the unrelated `SCL Assistant` project remains in its prior `submission_draft` state. No unrelated Devpost record was changed.
 - M5 and the hackathon definition of done are complete before the internal freeze. Scope expansions: none.
+
+## 2026-07-18 — Post-submission demo visibility
+
+- Acceptance criteria: change only the corrected submission upload at <https://youtu.be/qxRCA4PA4LA> from unlisted to public, leave the earlier upload untouched, verify the resulting state, and align the canonical submission documentation.
+- The user explicitly approved public visibility after the Devpost submission. YouTube Studio now reports the corrected upload as `Public`; its URL, title, audience setting, and disclosed synthetic narration are unchanged.
+- The earlier upload remains untouched and recoverable. The published Devpost entry continues to reference the corrected video URL, so no submission-field mutation was required.
+- Acceptance passed: the documentation contract, workspace typechecks, all 62 tests, and production builds completed successfully with `npm run check`.
+- Scope expansions: none. Product behavior, repository publication, Devpost state, and the frozen golden path are unchanged.

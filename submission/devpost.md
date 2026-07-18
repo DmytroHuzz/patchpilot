@@ -11,6 +11,7 @@
 - **Category:** Developer Tools
 - **Repository:** https://github.com/DmytroHuzz/patchpilot
 - **Demo video:** https://youtu.be/qxRCA4PA4LA
+- **Demo visibility:** Public
 - **Codex `/feedback` session ID:** `019f7422-123d-7242-a0cf-c7f6f237594b`
 - **Built with:** Codex, GPT-5.6, OpenAI Responses API, TypeScript, React, Node.js, OSV-Scanner, Zod, Vitest, Git
 

@@ -51,12 +51,12 @@ Issue #16 completed the 2:55 narration, exact 11-click storyboard, three consecu
 ## Submission requirements
 
 - Public judge-accessible repository with MIT license and verified clean-clone instructions.
-- Judge-viewable YouTube video under three minutes with audio explaining Codex and GPT‑5.6; the latest official announcement explicitly permits unlisted visibility.
+- Public YouTube video under three minutes with audio explaining Codex and GPT‑5.6.
 - Devpost Developer Tools entry with product description, repository and video links, built-with list, acknowledgements, and limitations.
 - Main Codex task `/feedback` reference and retained task ID.
 - Green CI, repeatable reset, three successful rehearsals, and final pre-deadline checklist.
 
-The corrected 2:18.17 H.264/AAC cut is available as an [unlisted, judge-viewable YouTube video](https://youtu.be/qxRCA4PA4LA), with reproducible render sources documented under [Submission video assets](../submission/README.md). The July 18 official deadline announcement states that unlisted visibility is acceptable; public visibility is therefore not required for submission.
+The corrected 2:18.17 H.264/AAC cut is available as a [public YouTube video](https://youtu.be/qxRCA4PA4LA), with reproducible render sources documented under [Submission video assets](../submission/README.md). The July 18 official deadline announcement permitted unlisted visibility, and the user explicitly approved making the corrected upload public after submission.
 
 ## Submission checklist
 

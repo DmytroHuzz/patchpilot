@@ -256,6 +256,6 @@ The project also builds on OpenAI’s JavaScript SDK, React, Vite, Zod, Vitest, 
 
 ## Roadmap
 
-The OpenAI Build Week submission is complete: [PatchPilot on Devpost](https://devpost.com/software/patchpilot-ord9wl). The latest official Build Week announcement explicitly permits an unlisted video when the link is viewable, so the corrected [demo video](https://youtu.be/qxRCA4PA4LA) remains unlisted. The timed script and three consecutive golden-path rehearsals are complete; no new product feature enters the frozen submission path.
+The OpenAI Build Week submission is complete: [PatchPilot on Devpost](https://devpost.com/software/patchpilot-ord9wl). The corrected [public demo video](https://youtu.be/qxRCA4PA4LA) presents the full golden path in 2:18. The timed script and three consecutive golden-path rehearsals are complete; no new product feature enters the frozen submission path.
 
 Post-hackathon possibilities include safe arbitrary-local-npm onboarding, advisory-independent patch contracts, optional approval-gated draft PR publication, multi-advisory triage, Dependabot ingestion, more ecosystems, runtime evidence, and team workflows. They are ideas—not implemented support or commitments. See [Roadmap](docs/roadmap.md).

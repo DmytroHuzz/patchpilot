@@ -29,6 +29,6 @@ The script uses AVFoundation and writes ignored, regenerable assets under `submi
 - `narration-clips/` — nine intermediate voice clips plus their provider manifest;
 - `patchpilot-demo-silent.mov` — intermediate video.
 
-The checked-in UI captures under `submission/video-frames/` are produced from one clean real local demo, not mocked screens. This makes the review cut reproducible from a clean macOS clone without rerunning the browser capture. All narration options are synthetic and must remain disclosed. The July 18 official Build Week announcement explicitly permits unlisted visibility when the link is viewable, so public visibility is not required for submission.
+The checked-in UI captures under `submission/video-frames/` are produced from one clean real local demo, not mocked screens. This makes the review cut reproducible from a clean macOS clone without rerunning the browser capture. All narration options are synthetic and must remain disclosed. The July 18 official Build Week announcement permitted unlisted visibility when the link is viewable; after submission, the user explicitly approved public visibility.
 
-Current submission upload: [PatchPilot — Human-Reviewed Dependency Patching | OpenAI Build Week](https://youtu.be/qxRCA4PA4LA). It is unlisted, judge-viewable, marked not made for kids, and uses the description above to disclose synthetic narration. See [Devpost submission copy](devpost.md) for the canonical external fields.
+Current submission upload: [PatchPilot — Human-Reviewed Dependency Patching | OpenAI Build Week](https://youtu.be/qxRCA4PA4LA). It is public, marked not made for kids, and uses the description above to disclose synthetic narration. See [Devpost submission copy](devpost.md) for the canonical external fields.

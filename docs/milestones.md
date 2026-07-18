@@ -54,7 +54,7 @@
 
 ## M5 — Submission
 
-- [x] Sub-three-minute review MP4 rendered, technically verified, and uploaded to YouTube as an unlisted review link; public visibility remains approval-gated.
+- [x] Sub-three-minute review MP4 rendered, technically verified, uploaded to YouTube, and made public after explicit approval.
 - [x] Accessible repository, video, Devpost copy, built-with list, `/feedback` reference, and testing instructions complete.
 - [x] Submission completed before 2026-07-21 20:00 Europe/Vienna internal freeze.
 
