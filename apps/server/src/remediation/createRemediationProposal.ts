@@ -1,5 +1,5 @@
 import path from "node:path";
-import type { RemediationProposal } from "@patchpilot/contracts";
+import type { InvestigationResult, RemediationProposal } from "@patchpilot/contracts";
 import { createRemediationContext } from "../ai/remediationContext.js";
 import { resolveRemediationPlan } from "../ai/planRemediation.js";
 import { investigateRepository } from "../investigation/investigateRepository.js";
@@ -9,8 +9,9 @@ export async function createRemediationProposal(options: {
   repositoryPath: string;
   projectRoot: string;
   approvalStore: RemediationApprovalStore;
+  investigation?: InvestigationResult;
 }): Promise<RemediationProposal> {
-  const investigation = await investigateRepository({
+  const investigation = options.investigation ?? await investigateRepository({
     repositoryPath: options.repositoryPath,
     projectRoot: options.projectRoot,
   });

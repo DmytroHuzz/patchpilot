@@ -40,10 +40,12 @@
 - [x] One safe targeted regression test is generated and passes.
 - [x] Baseline and post-patch full tests and build pass.
 - [x] Selected finding disappears on rescan.
+- [x] Markdown and JSON evidence reports preserve the complete accepted chain.
 
 ## M4 — Demo quality
 
-- [ ] Report, polished UI, README, screenshots, and fallback plan complete.
+- [x] Final report screen and download/copy handoff controls complete.
+- [ ] Remaining UI polish, README expansion, screenshots, and fallback plan complete.
 - [ ] Full demo succeeds three consecutive times without manual repair.
 
 ## M5 — Submission

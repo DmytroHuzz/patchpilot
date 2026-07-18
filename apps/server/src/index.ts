@@ -5,10 +5,12 @@ import path from "node:path";
 import {
   CompatibilityRepairRequestSchema,
   DependencyUpdateRequestSchema,
+  EvidenceReportRequestSchema,
   IsolationRequestSchema,
   RemediationDecisionRequestSchema,
   TargetedTestRequestSchema,
   VerificationRequestSchema,
+  type InvestigationResult,
 } from "@patchpilot/contracts";
 import { investigateRepository } from "./investigation/investigateRepository.js";
 import { RemediationApprovalStore } from "./remediation/approvalGate.js";
@@ -19,6 +21,7 @@ import { CompatibilityRepairStore, runCompatibilityRepairLoop } from "./remediat
 import { generateTargetedRegressionTest, TargetedTestStore } from "./remediation/generateTargetedRegressionTest.js";
 import { scanRepository } from "./scanning/osvScanner.js";
 import { runBaselineAndPostPatchVerification, VerificationStore } from "./verification/runVerification.js";
+import { EvidenceReportStore, generateEvidenceReport } from "./reporting/generateEvidenceReport.js";
 
 export const serviceName = "PatchPilot orchestrator";
 const root = process.cwd();
@@ -31,6 +34,8 @@ const dependencyUpdateStore = new DependencyUpdateStore();
 const compatibilityRepairStore = new CompatibilityRepairStore();
 const targetedTestStore = new TargetedTestStore();
 const verificationStore = new VerificationStore();
+const evidenceReportStore = new EvidenceReportStore();
+let latestInvestigation: InvestigationResult | undefined;
 
 const contentTypes: Record<string, string> = {
   ".css": "text/css; charset=utf-8",
@@ -70,6 +75,7 @@ const server = createServer(async (request, response) => {
   if (request.method === "POST" && request.url === "/api/demo/investigate") {
     try {
       const result = await investigateRepository({ repositoryPath: demoRoot, projectRoot: root });
+      latestInvestigation = result;
       response.writeHead(200, { "content-type": "application/json" });
       response.end(JSON.stringify(result));
     } catch (error) {
@@ -81,10 +87,12 @@ const server = createServer(async (request, response) => {
 
   if (request.method === "POST" && request.url === "/api/demo/remediation-plan") {
     try {
+      latestInvestigation ??= await investigateRepository({ repositoryPath: demoRoot, projectRoot: root });
       const proposal = await createRemediationProposal({
         repositoryPath: demoRoot,
         projectRoot: root,
         approvalStore,
+        investigation: latestInvestigation,
       });
       response.writeHead(200, { "content-type": "application/json" });
       response.end(JSON.stringify(proposal));
@@ -274,6 +282,67 @@ const server = createServer(async (request, response) => {
     return;
   }
 
+  if (request.method === "POST" && request.url === "/api/demo/report") {
+    try {
+      const reportRequest = EvidenceReportRequestSchema.parse(await readJsonBody(request));
+      const existing = evidenceReportStore.getByRun(reportRequest.runId);
+      if (existing) {
+        if (existing.planId !== reportRequest.planId) throw new Error("Evidence report does not match the requested approved plan");
+        response.writeHead(200, { "content-type": "application/json" });
+        response.end(JSON.stringify(existing));
+        return;
+      }
+      const proposal = approvalStore.get(reportRequest.planId);
+      const isolationRun = isolationRunStore.getById(reportRequest.runId);
+      const dependencyUpdate = dependencyUpdateStore.getByRun(reportRequest.runId);
+      const compatibilityRepair = compatibilityRepairStore.getByRun(reportRequest.runId);
+      const targetedTest = targetedTestStore.getByRun(reportRequest.runId);
+      const verification = verificationStore.getByRun(reportRequest.runId);
+      if (!latestInvestigation || !proposal || !isolationRun || !dependencyUpdate || !compatibilityRepair || !targetedTest || !verification) {
+        throw new Error("Accepted verification evidence chain is unknown or expired");
+      }
+      const result = await generateEvidenceReport({
+        investigation: latestInvestigation,
+        proposal,
+        isolationRun,
+        dependencyUpdate,
+        compatibilityRepair,
+        targetedTest,
+        verification,
+        sourceRepositoryPath: demoRoot,
+        resultRoot: path.join(root, "runs/audit"),
+      });
+      const stored = evidenceReportStore.register(result);
+      response.writeHead(200, { "content-type": "application/json" });
+      response.end(JSON.stringify(stored));
+    } catch (error) {
+      response.writeHead(400, { "content-type": "application/json" });
+      response.end(JSON.stringify({ error: error instanceof Error ? error.message : "Evidence report generation failed" }));
+    }
+    return;
+  }
+
+  const reportDownload = request.method === "GET"
+    ? request.url?.match(/^\/api\/demo\/report\/(run-[0-9a-f-]{36})\.(md|json)$/)
+    : null;
+  if (reportDownload) {
+    const [, runId, format] = reportDownload;
+    const report = evidenceReportStore.getByRun(runId!);
+    if (!report) {
+      response.writeHead(404, { "content-type": "application/json" });
+      response.end(JSON.stringify({ error: "Evidence report is unknown or expired" }));
+      return;
+    }
+    const markdown = format === "md";
+    response.writeHead(200, {
+      "content-type": markdown ? "text/markdown; charset=utf-8" : "application/json; charset=utf-8",
+      "content-disposition": `attachment; filename="patchpilot-${runId}.${format}"`,
+      "cache-control": "no-store",
+    });
+    response.end(markdown ? report.markdown : `${JSON.stringify(report.report, null, 2)}\n`);
+    return;
+  }
+
   const requestPath = request.url === "/" ? "/index.html" : (request.url ?? "/index.html");
   const filePath = path.resolve(webRoot, `.${requestPath}`);
   if (!filePath.startsWith(`${webRoot}${path.sep}`)) {
@@ -292,5 +361,5 @@ const server = createServer(async (request, response) => {
 });
 
 server.listen(port, "127.0.0.1", () => {
-  console.log(`PatchPilot Milestone 3 deterministic verification: http://127.0.0.1:${port}`);
+  console.log(`PatchPilot Milestone 3 evidence reporting: http://127.0.0.1:${port}`);
 });

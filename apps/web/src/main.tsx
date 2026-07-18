@@ -3,6 +3,7 @@ import { createRoot } from "react-dom/client";
 import type {
   CompatibilityRepairResult,
   DependencyUpdateResult,
+  EvidenceReportResult,
   IsolationRun,
   InvestigationResult,
   NormalizedScanResult,
@@ -12,7 +13,7 @@ import type {
 } from "@patchpilot/contracts";
 import "./styles.css";
 
-type Status = "ready" | "scanning" | "investigating" | "planning" | "deciding" | "isolating" | "updating" | "repairing" | "testing" | "verifying" | "error";
+type Status = "ready" | "scanning" | "investigating" | "planning" | "deciding" | "isolating" | "updating" | "repairing" | "testing" | "verifying" | "reporting" | "error";
 
 function sentenceCase(value: string): string {
   return value.replaceAll("_", " ");
@@ -27,6 +28,8 @@ function App() {
   const [compatibilityRepair, setCompatibilityRepair] = useState<CompatibilityRepairResult>();
   const [targetedTest, setTargetedTest] = useState<TargetedTestResult>();
   const [verification, setVerification] = useState<VerificationResult>();
+  const [evidenceReport, setEvidenceReport] = useState<EvidenceReportResult>();
+  const [copyLabel, setCopyLabel] = useState("Copy Markdown");
   const [status, setStatus] = useState<Status>("ready");
   const [error, setError] = useState("");
 
@@ -53,6 +56,7 @@ function App() {
     setCompatibilityRepair(undefined);
     setTargetedTest(undefined);
     setVerification(undefined);
+    setEvidenceReport(undefined);
     try {
       setResult(await post<NormalizedScanResult>("/api/demo/scan"));
       setStatus("ready");
@@ -71,6 +75,7 @@ function App() {
     setCompatibilityRepair(undefined);
     setTargetedTest(undefined);
     setVerification(undefined);
+    setEvidenceReport(undefined);
     try {
       setInvestigation(await post<InvestigationResult>("/api/demo/investigate"));
       setStatus("ready");
@@ -173,6 +178,7 @@ function App() {
     if (!proposal || !isolation || !targetedTest) return;
     setStatus("verifying");
     setError("");
+    setEvidenceReport(undefined);
     try {
       setVerification(await post<VerificationResult>("/api/demo/verification", {
         planId: proposal.id,
@@ -185,6 +191,29 @@ function App() {
     }
   }
 
+  async function generateReport() {
+    if (!proposal || !isolation || verification?.status !== "verified") return;
+    setStatus("reporting");
+    setError("");
+    try {
+      setEvidenceReport(await post<EvidenceReportResult>("/api/demo/report", {
+        planId: proposal.id,
+        runId: isolation.id,
+      }));
+      setStatus("ready");
+    } catch (reportError) {
+      setError(reportError instanceof Error ? reportError.message : "Evidence report generation failed");
+      setStatus("error");
+    }
+  }
+
+  async function copyMarkdown() {
+    if (!evidenceReport) return;
+    await navigator.clipboard.writeText(evidenceReport.markdown);
+    setCopyLabel("Copied ✓");
+    window.setTimeout(() => setCopyLabel("Copy Markdown"), 1600);
+  }
+
   const finding = result?.findings.find(({ id }) => id === "GHSA-9c47-m6qq-7p4h");
   const assessment = investigation?.assessmentRun.assessment;
   const assessmentSource = investigation?.assessmentRun.source;
@@ -194,8 +223,8 @@ function App() {
     <div className="shell">
       <header>
         <span className="mark">P</span><strong>PatchPilot</strong>
-        <nav><span className="active">01 Detect</span><span className={finding ? "active" : ""}>02 Investigate</span><span className={proposal ? "active" : ""}>03 Approve</span><span className={isolation ? "active" : ""}>04 Isolate</span><span className={dependencyUpdate ? "active" : ""}>05 Update</span><span className={compatibilityRepair ? "active" : ""}>06 Repair</span><span className={targetedTest ? "active" : ""}>07 Test</span><span className={verification ? "active" : ""}>08 Verify</span></nav>
-        <span className="stage">M3 / VERIFICATION</span>
+        <nav><span className="active">01 Detect</span><span className={finding ? "active" : ""}>02 Investigate</span><span className={proposal ? "active" : ""}>03 Approve</span><span className={isolation ? "active" : ""}>04 Isolate</span><span className={dependencyUpdate ? "active" : ""}>05 Update</span><span className={compatibilityRepair ? "active" : ""}>06 Repair</span><span className={targetedTest ? "active" : ""}>07 Test</span><span className={verification ? "active" : ""}>08 Verify</span><span className={evidenceReport ? "active" : ""}>09 Report</span></nav>
+        <span className="stage">M3 / REPORT</span>
       </header>
       <main>
         <section className="hero">
@@ -209,7 +238,7 @@ function App() {
             <h2>patchpilot-golden-demo</h2>
             <p>Node.js · npm · direct dependency</p>
             <code>demo/vulnerable-node-app</code>
-            <button onClick={scanDemo} disabled={["scanning", "investigating", "planning", "deciding", "isolating", "updating", "repairing", "testing", "verifying"].includes(status)}>
+            <button onClick={scanDemo} disabled={["scanning", "investigating", "planning", "deciding", "isolating", "updating", "repairing", "testing", "verifying", "reporting"].includes(status)}>
               {status === "scanning" ? "Scanning with OSV…" : "Run deterministic scan"}<span>→</span>
             </button>
             {error && <p className="error">{error}</p>}
@@ -604,8 +633,67 @@ function App() {
 
           <div className="verification-checkpoint">
             <div className="ready-icon">{verification.status === "verified" ? "✓" : "×"}</div>
-            <div><strong>{verification.status === "verified" ? "Verification checkpoint complete." : "Verification stopped honestly."}</strong><span>{verification.status === "verified" ? "Baseline and post-patch tests/build pass, the selected advisory is absent, and the approved four-file diff remains intact. Reporting is the next separate issue." : "The failure classification and bounded command facts are retained; reporting and publication remain blocked."}</span></div>
+            <div><strong>{verification.status === "verified" ? "Verification checkpoint complete." : "Verification stopped honestly."}</strong><span>{verification.status === "verified" ? "Baseline and post-patch tests/build pass, the selected advisory is absent, and the approved four-file diff remains intact. The accepted chain is ready for reporting." : "The failure classification and bounded command facts are retained; reporting and publication remain blocked."}</span></div>
             <code>{verification.completedAt}</code>
+          </div>
+          {verification.status === "verified" && !evidenceReport && <div className="report-launch">
+            <div><strong>Verification chain accepted.</strong><span>Freeze the finding, evidence, approval, patch, commands, rescan, and uncertainty into two reviewable artifacts.</span></div>
+            <button onClick={generateReport} disabled={status === "reporting"}>
+              {status === "reporting" ? "Generating evidence artifacts…" : "Generate evidence report"}<span>→</span>
+            </button>
+          </div>}
+          </section>}
+
+        {evidenceReport && <section className="evidence-report" aria-live="polite">
+          <div className="report-title">
+            <div><p className="eyebrow">09 · HUMAN-REVIEWABLE EVIDENCE</p><h2>Facts. Judgment. Approval. Unknowns.</h2></div>
+            <div className="report-badge"><span>MARKDOWN + JSON</span><strong>✓ REPORT READY</strong></div>
+          </div>
+
+          <div className="report-facts">
+            <div><span>FINAL STATUS</span><strong>✓ {evidenceReport.report.finalStatus.status.toUpperCase()}</strong></div>
+            <div><span>EVIDENCE REFERENCES</span><strong>{evidenceReport.report.deterministicFacts.evidence.length} VALID</strong></div>
+            <div><span>COMMAND FACTS</span><strong>{evidenceReport.report.deterministicFacts.commands.length}</strong></div>
+            <div><span>SELECTED ADVISORY</span><strong>✓ ABSENT</strong></div>
+          </div>
+
+          <div className="report-grid">
+            <article>
+              <p className="panel-label"><span>F</span> DETERMINISTIC FACTS</p>
+              <ul>
+                <li>Original {evidenceReport.report.deterministicFacts.finding.id} finding</li>
+                <li>Repository-relative evidence and line references</li>
+                <li>Exact four-file patch and command results</li>
+                <li>Normalized OSV rescan with selected advisory absent</li>
+              </ul>
+            </article>
+            <article className="interpretation-card">
+              <p className="panel-label"><span>AI</span> MODEL INTERPRETATION</p>
+              <strong>{sentenceCase(evidenceReport.report.modelInterpretation.affectedness.assessment.verdict)} · {evidenceReport.report.modelInterpretation.affectedness.assessment.confidence} confidence</strong>
+              <p>{evidenceReport.report.modelInterpretation.affectedness.assessment.rationale}</p>
+            </article>
+            <article className="uncertainty-card">
+              <p className="panel-label"><span>?</span> UNCERTAINTY RETAINED</p>
+              <ul>{evidenceReport.report.uncertainty.affectednessUnknowns.map((item) => <li key={item}>{item}</li>)}</ul>
+              <small>{evidenceReport.report.uncertainty.disclaimer}</small>
+            </article>
+          </div>
+
+          <div className="report-artifacts">
+            <div><span>MARKDOWN</span><code>{evidenceReport.reportPaths.markdown}</code></div>
+            <div><span>JSON</span><code>{evidenceReport.reportPaths.json}</code></div>
+            <div className="report-actions">
+              <a href={`/api/demo/report/${evidenceReport.runId}.md`} download>Download .md</a>
+              <a href={`/api/demo/report/${evidenceReport.runId}.json`} download>Download .json</a>
+              <button className="secondary" onClick={copyMarkdown}>{copyLabel}</button>
+            </div>
+          </div>
+
+          <details className="report-preview"><summary>Preview Markdown evidence report</summary><pre>{evidenceReport.markdown}</pre></details>
+          <div className="report-checkpoint">
+            <div className="ready-icon">✓</div>
+            <div><strong>Golden path complete.</strong><span>Detect → investigate → approve → patch → test → rescan → report. Git publication remains a separate, optional step.</span></div>
+            <code>{evidenceReport.completedAt}</code>
           </div>
         </section>}
       </main>

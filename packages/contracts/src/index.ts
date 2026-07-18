@@ -691,3 +691,116 @@ export const InvestigationResultSchema = z.object({
 }).strict();
 
 export type InvestigationResult = z.infer<typeof InvestigationResultSchema>;
+
+export const EvidenceReportSchema = z.object({
+  schemaVersion: z.literal("1.0"),
+  reportId: z.string().regex(/^report-run-[0-9a-f-]{36}$/),
+  runId: z.string().regex(/^run-[0-9a-f-]{36}$/),
+  planId: z.string().regex(/^plan-[a-f0-9]{64}$/),
+  generatedAt: z.string().datetime(),
+  deterministicFacts: z.object({
+    finding: VulnerabilityFindingSchema,
+    evidence: z.array(EvidenceItemSchema).min(1).max(24),
+    patch: z.object({
+      changedFiles: z.tuple([
+        z.literal("package-lock.json"),
+        z.literal("package.json"),
+        z.literal("src/theme.js"),
+        z.literal("test/theme.test.js"),
+      ]),
+      dependency: z.object({
+        packageName: z.literal("json5"),
+        fromVersion: z.string().min(1),
+        toVersion: z.string().min(1),
+        files: z.tuple([z.literal("package-lock.json"), z.literal("package.json")]),
+        diff: z.string().min(1).max(64 * 1024),
+      }).strict(),
+      source: z.object({
+        file: z.literal("src/theme.js"),
+        diff: z.string().min(1).max(64 * 1024),
+      }).strict(),
+      test: z.object({
+        file: z.literal("test/theme.test.js"),
+        name: z.string().min(1).max(160),
+        diff: z.string().min(1).max(64 * 1024),
+      }).strict(),
+    }).strict(),
+    commands: z.array(VerificationCommandResultSchema).min(1).max(8),
+    rescan: VerificationRescanSchema.nullable(),
+    sourceCheckoutClean: z.literal(true),
+  }).strict(),
+  modelInterpretation: z.object({
+    affectedness: AssessmentRunSchema,
+    remediationPlan: RemediationPlanRunSchema,
+    compatibilityRepair: CompatibilityRepairProposalRunSchema,
+    targetedTest: TargetedTestProposalRunSchema,
+  }).strict(),
+  humanDecision: ApprovalRecordSchema,
+  uncertainty: z.object({
+    affectednessUnknowns: z.array(z.string().min(1)).min(1).max(12),
+    limitations: z.array(z.string().min(1)).min(1).max(12),
+    compatibilityUnknowns: z.array(z.string().min(1)).min(1).max(6),
+    testUnknowns: z.array(z.string().min(1)).min(1).max(6),
+    recommendedNextChecks: z.array(z.string().min(1)).min(1).max(12),
+    disclaimer: z.literal("Verified checks reduce uncertainty but do not certify exploitability, compliance, or security."),
+  }).strict(),
+  finalStatus: z.object({
+    status: z.enum(["verified", "failed"]),
+    selectedAdvisoryPresent: z.boolean().nullable(),
+    summary: z.string().min(1).max(2000),
+  }).strict(),
+}).strict().superRefine((report, context) => {
+  if (report.reportId !== `report-${report.runId}`) {
+    context.addIssue({ code: z.ZodIssueCode.custom, message: "Report ID must derive from the run ID" });
+  }
+  if (report.humanDecision.planId !== report.planId || report.humanDecision.decision !== "approved") {
+    context.addIssue({ code: z.ZodIssueCode.custom, message: "Report requires the matching human approval record" });
+  }
+  if (report.deterministicFacts.finding.id !== "GHSA-9c47-m6qq-7p4h") {
+    context.addIssue({ code: z.ZodIssueCode.custom, message: "Report finding must be the selected golden-path advisory" });
+  }
+  const evidenceIds = new Set(report.deterministicFacts.evidence.map(({ id }) => id));
+  if (evidenceIds.size !== report.deterministicFacts.evidence.length) {
+    context.addIssue({ code: z.ZodIssueCode.custom, message: "Report evidence IDs must be unique" });
+  }
+  const assessmentIds = [
+    ...report.modelInterpretation.affectedness.assessment.supportingEvidenceIds,
+    ...report.modelInterpretation.affectedness.assessment.counterEvidenceIds,
+  ];
+  if (assessmentIds.some((id) => !evidenceIds.has(id))) {
+    context.addIssue({ code: z.ZodIssueCode.custom, message: "Model interpretation may reference only included evidence IDs" });
+  }
+  if (report.finalStatus.status === "verified") {
+    if (report.finalStatus.selectedAdvisoryPresent !== false || report.deterministicFacts.rescan?.selectedAdvisoryPresent !== false) {
+      context.addIssue({ code: z.ZodIssueCode.custom, message: "Verified reports require a clean selected-advisory rescan" });
+    }
+  }
+});
+
+export type EvidenceReport = z.infer<typeof EvidenceReportSchema>;
+
+export const EvidenceReportResultSchema = z.object({
+  runId: z.string().regex(/^run-[0-9a-f-]{36}$/),
+  planId: z.string().regex(/^plan-[a-f0-9]{64}$/),
+  status: z.literal("reported"),
+  report: EvidenceReportSchema,
+  markdown: z.string().min(1).max(256 * 1024),
+  reportPaths: z.object({
+    markdown: z.string().regex(/^runs\/audit\/run-[0-9a-f-]{36}-report\.md$/),
+    json: z.string().regex(/^runs\/audit\/run-[0-9a-f-]{36}-report\.json$/),
+  }).strict(),
+  completedAt: z.string().datetime(),
+}).strict().superRefine((result, context) => {
+  if (result.runId !== result.report.runId || result.planId !== result.report.planId || result.completedAt !== result.report.generatedAt) {
+    context.addIssue({ code: z.ZodIssueCode.custom, message: "Report artifact metadata must match the embedded report" });
+  }
+});
+
+export type EvidenceReportResult = z.infer<typeof EvidenceReportResultSchema>;
+
+export const EvidenceReportRequestSchema = z.object({
+  planId: z.string().regex(/^plan-[a-f0-9]{64}$/),
+  runId: z.string().regex(/^run-[0-9a-f-]{36}$/),
+}).strict();
+
+export type EvidenceReportRequest = z.infer<typeof EvidenceReportRequestSchema>;

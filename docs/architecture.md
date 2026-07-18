@@ -1,6 +1,6 @@
 # Architecture
 
-This document grows only with implemented milestones. Report generation remains a placeholder until its issue begins.
+This document grows only with implemented milestones.
 
 The Milestone 1 slice is: bundled npm fixture → OSV-Scanner subprocess → validated normalized finding → findings UI.
 
@@ -93,3 +93,12 @@ OSV and command output are deterministic facts. There is no model call or interp
 - Each command records its phase, kind, exact command, raw exit code, duration, bounded/redacted stdout/stderr summary, truncation state, and one of `passed`, `failed`, or `findings_present`.
 - Verification stops on the first failed deterministic command. Failures are classified by exact stage; an unusable rescan and a rescan that still contains `GHSA-9c47-m6qq-7p4h` are distinct terminal failures.
 - A verified result requires all seven install/test/build commands to pass, a usable OSV rescan with the selected advisory absent, the original four-file diff intact, and the source checkout clean. Reporting, commit, push, and merge remain outside Issue #12.
+
+## Implemented M3 reporting boundary
+
+- `POST /api/demo/report` accepts only the active approved plan/run chain after dependency update, retained source repair, retained targeted test, and deterministic verification. Every plan and run ID must agree.
+- Before generation, each positioned evidence item must use a searched repository-relative file and its stored line excerpt must still match the unchanged vulnerable source exactly. Every assessment citation must resolve to an included unique evidence ID.
+- The JSON contract separates `deterministicFacts`, `modelInterpretation`, `humanDecision`, `uncertainty`, and `finalStatus`. The Markdown renderer repeats those trust labels in every relevant heading.
+- The report contains the original finding, cited evidence, affectedness assessment, approval, approved plan, exact dependency/source/test diffs, changed files, eight bounded command facts, normalized rescan, remaining uncertainty, and final status.
+- Markdown and JSON are written with owner-only permissions under ignored `runs/audit/` paths. Returned paths are repository-relative; the report excludes absolute local paths. Session-bound `GET` routes serve each artifact as a no-store attachment.
+- Reporting is deterministic composition only. It does not make a new model call, mutate the source or isolated patch, commit, push, publish, certify compliance, or claim that the repository is secure.

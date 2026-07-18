@@ -26,9 +26,9 @@ button { width: 100%; display: flex; justify-content: space-between; align-items
 button:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 12px 30px #76f2b51f; }
 button:disabled { cursor: wait; opacity: .65; }
 .error { color: #ff8f8f !important; font: 12px ui-monospace, monospace; }
-.result, .investigation, .remediation, .isolation, .dependency-update, .compatibility-repair, .targeted-test, .verification { overflow: hidden; margin-top: 48px; border: 1px solid #344139; border-radius: 18px; background: #111713; box-shadow: 0 24px 90px #0007; }
-.result-head, .investigation-title, .remediation-title, .isolation-title, .dependency-title, .repair-title, .test-title, .verification-title { display: flex; align-items: flex-start; justify-content: space-between; gap: 30px; padding: 30px; border-bottom: 1px solid #29312d; }
-.result-head h2, .investigation-title h2, .remediation-title h2, .isolation-title h2, .dependency-title h2, .repair-title h2, .test-title h2, .verification-title h2 { margin: 8px 0 0; font-size: clamp(24px, 3vw, 38px); letter-spacing: -.04em; }
+.result, .investigation, .remediation, .isolation, .dependency-update, .compatibility-repair, .targeted-test, .verification, .evidence-report { overflow: hidden; margin-top: 48px; border: 1px solid #344139; border-radius: 18px; background: #111713; box-shadow: 0 24px 90px #0007; }
+.result-head, .investigation-title, .remediation-title, .isolation-title, .dependency-title, .repair-title, .test-title, .verification-title, .report-title { display: flex; align-items: flex-start; justify-content: space-between; gap: 30px; padding: 30px; border-bottom: 1px solid #29312d; }
+.result-head h2, .investigation-title h2, .remediation-title h2, .isolation-title h2, .dependency-title h2, .repair-title h2, .test-title h2, .verification-title h2, .report-title h2 { margin: 8px 0 0; font-size: clamp(24px, 3vw, 38px); letter-spacing: -.04em; }
 .severity { padding: 8px 11px; color: #ffbb70; border: 1px solid #7d5934; border-radius: 7px; background: #2e2114; font: 800 10px ui-monospace, monospace; }
 .facts { display: grid; grid-template-columns: repeat(4, 1fr); }
 .facts div { padding: 26px 30px; border-right: 1px solid #29312d; }
@@ -316,5 +316,43 @@ li::marker { color: #52665b; }
 .verification-checkpoint > code { margin-left: auto; color: #59806d; font-size: 9px; }
 .verification.failed { border-color: #6b5736; }
 .verification.failed .verification-checkpoint { border-color: #6b5736; background: #1a160e; }
+.report-launch { display: flex; align-items: center; justify-content: space-between; gap: 30px; padding: 20px 30px; border-top: 1px solid #315e49; background: #07100b; }
+.report-launch > div { display: grid; gap: 4px; }
+.report-launch strong { font-size: 13px; }
+.report-launch span { color: #7e8d84; font-size: 12px; }
+.report-launch button { width: 290px; flex: 0 0 290px; margin: 0; }
+.evidence-report { margin-top: 32px; border-color: #64a47f; background: #0a140f; }
+.report-badge { padding: 10px 13px; color: #76f2b5; border: 1px solid #347253; border-radius: 8px; background: #102a1e; text-align: right; }
+.report-badge span, .report-badge strong { display: block; font: 800 9px ui-monospace, monospace; letter-spacing: .1em; }
+.report-badge strong { margin-top: 5px; color: #d0e7da; }
+.report-facts { display: grid; grid-template-columns: repeat(4, 1fr); border-bottom: 1px solid #29312d; }
+.report-facts > div { display: grid; gap: 8px; padding: 23px 30px; border-right: 1px solid #29312d; }
+.report-facts > div:last-child { border: 0; }
+.report-facts span { color: #6f7d75; font: 700 9px ui-monospace, monospace; letter-spacing: .12em; }
+.report-facts strong { color: #76f2b5; font: 700 14px "Manrope", sans-serif; }
+.report-grid { display: grid; grid-template-columns: .8fr 1.2fr 1fr; border-bottom: 1px solid #29312d; }
+.report-grid article { min-width: 0; padding: 28px 30px; border-right: 1px solid #29312d; }
+.report-grid article:last-child { border: 0; }
+.report-grid p:not(.panel-label), .report-grid small { color: #84948b; font-size: 11px; line-height: 1.55; }
+.interpretation-card { background: #12130e; }
+.interpretation-card .panel-label span { color: #e5c989; border-color: #66562e; }
+.interpretation-card > strong { display: block; margin-top: 20px; color: #dfd0aa; font: 700 12px ui-monospace, monospace; text-transform: uppercase; }
+.uncertainty-card { background: #10130f; }
+.uncertainty-card small { display: block; margin-top: 20px; padding: 12px; border: 1px solid #51472e; border-radius: 8px; color: #ad9d73; background: #17140d; }
+.report-artifacts { display: grid; grid-template-columns: 1fr 1fr 1.4fr; align-items: center; gap: 20px; padding: 24px 30px; border-bottom: 1px solid #315e49; background: #0d1912; }
+.report-artifacts > div:not(.report-actions) { display: grid; gap: 7px; min-width: 0; }
+.report-artifacts span { color: #65786d; font: 700 8px ui-monospace, monospace; letter-spacing: .12em; }
+.report-artifacts code { overflow-wrap: anywhere; color: #a8c9b6; }
+.report-actions { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
+.report-actions button, .report-actions a { display: flex; align-items: center; justify-content: center; width: auto; margin: 0; padding: 11px 10px; border-radius: 10px; color: #08100c; background: #76f2b5; font: 800 10px "Manrope", sans-serif; text-decoration: none; }
+.report-actions .secondary { width: auto; color: #b7c5bd; border: 1px solid #3a4a41; background: #18201b; }
+.report-preview { border-bottom: 1px solid #29312d; }
+.report-preview summary { padding: 18px 30px; color: #8ea097; font: 700 10px ui-monospace, monospace; cursor: pointer; }
+.report-preview pre { overflow: auto; max-height: 620px; margin: 0; padding: 25px 30px; color: #9cacA3; border-top: 1px solid #29312d; background: #070c09; font-size: 10px; line-height: 1.55; white-space: pre-wrap; }
+.report-checkpoint { display: flex; align-items: center; gap: 16px; padding: 22px 30px; background: #102119; }
+.report-checkpoint > div:nth-child(2) { display: grid; gap: 4px; }
+.report-checkpoint strong { color: #cbe8d8; font-size: 13px; }
+.report-checkpoint span { color: #789085; font-size: 11px; }
+.report-checkpoint > code { margin-left: auto; color: #59806d; font-size: 9px; }
 @media (max-width: 980px) { nav { display: none; } .investigation-grid { grid-template-columns: 1fr; } .panel { border-right: 0; border-bottom: 1px solid #29312d; } }
-@media (max-width: 760px) { main { width: 92vw; } .hero { grid-template-columns: 1fr; gap: 35px; } .facts, .evidence-row, .uncertainty-grid, .plan-summary, .plan-grid, .approval-actions, .isolation-facts, .isolation-grid, .dependency-facts, .dependency-grid, .repair-facts, .repair-grid, .repair-notes, .test-facts, .test-grid, .test-notes, .verification-facts, .verification-grid { grid-template-columns: 1fr; } .facts div, .uncertainty-grid > div, .plan-summary > div, .plan-grid article, .isolation-facts > div, .isolation-grid article, .dependency-facts > div, .dependency-grid article, .repair-facts > div, .repair-grid article, .repair-notes > div, .test-facts > div, .test-grid article, .test-notes > div, .verification-facts > div, .verification-grid > article { border-right: 0; border-bottom: 1px solid #29312d; } h1 { font-size: 52px; } .stage { display: none; } .next-action, .investigation-title, .remediation-title, .plan-launch, .isolation-title, .isolation-launch, .dependency-title, .dependency-launch, .repair-title, .repair-launch, .test-title, .test-launch, .verification-title, .verification-launch { align-items: stretch; flex-direction: column; } .secondary, .isolation-launch button, .dependency-launch button, .repair-launch button, .test-launch button, .verification-launch button { width: 100%; flex-basis: auto; } .source-badge, .isolation-badge, .dependency-badge, .verification-badge { text-align: left; } .isolation-ready, .dependency-checkpoint, .repair-checkpoint, .test-checkpoint, .verification-checkpoint { align-items: flex-start; flex-wrap: wrap; } .isolation-ready > code, .dependency-checkpoint > code, .repair-checkpoint > code, .test-checkpoint > code, .verification-checkpoint > code { width: 100%; margin-left: 56px; } }
+@media (max-width: 760px) { main { width: 92vw; } .hero { grid-template-columns: 1fr; gap: 35px; } .facts, .evidence-row, .uncertainty-grid, .plan-summary, .plan-grid, .approval-actions, .isolation-facts, .isolation-grid, .dependency-facts, .dependency-grid, .repair-facts, .repair-grid, .repair-notes, .test-facts, .test-grid, .test-notes, .verification-facts, .verification-grid, .report-facts, .report-grid, .report-artifacts { grid-template-columns: 1fr; } .facts div, .uncertainty-grid > div, .plan-summary > div, .plan-grid article, .isolation-facts > div, .isolation-grid article, .dependency-facts > div, .dependency-grid article, .repair-facts > div, .repair-grid article, .repair-notes > div, .test-facts > div, .test-grid article, .test-notes > div, .verification-facts > div, .verification-grid > article, .report-facts > div, .report-grid article { border-right: 0; border-bottom: 1px solid #29312d; } h1 { font-size: 52px; } .stage { display: none; } .next-action, .investigation-title, .remediation-title, .plan-launch, .isolation-title, .isolation-launch, .dependency-title, .dependency-launch, .repair-title, .repair-launch, .test-title, .test-launch, .verification-title, .verification-launch, .report-title, .report-launch { align-items: stretch; flex-direction: column; } .secondary, .isolation-launch button, .dependency-launch button, .repair-launch button, .test-launch button, .verification-launch button, .report-launch button { width: 100%; flex-basis: auto; } .source-badge, .isolation-badge, .dependency-badge, .verification-badge, .report-badge { text-align: left; } .isolation-ready, .dependency-checkpoint, .repair-checkpoint, .test-checkpoint, .verification-checkpoint, .report-checkpoint { align-items: flex-start; flex-wrap: wrap; } .isolation-ready > code, .dependency-checkpoint > code, .repair-checkpoint > code, .test-checkpoint > code, .verification-checkpoint > code, .report-checkpoint > code { width: 100%; margin-left: 56px; } }
