@@ -261,3 +261,13 @@
 - Uploaded the verified local artifact to the `NewMedia` channel with title `PatchPilot — Human-Reviewed Dependency Patching | OpenAI Build Week`, the golden-path description, repository link, and synthetic-narration disclosure. Audience is set to not made for kids.
 - YouTube confirmed `Video published` at <https://youtu.be/9PyrTSgSAhU>. Upload and SD processing completed; the copyright check continued in the background when the unlisted visibility was saved.
 - Issue #17 remains open. Public visibility, Devpost mutation, `/feedback`, and the final submission checklist are not complete.
+
+## 2026-07-18 — Issue 17 partial: post-approval frame correction
+
+- Human review found that every slide after `03 · Approve` used a mid-scroll capture: the active stage was cut at the top and the following stage leaked into the bottom of the frame.
+- Acceptance criteria: start each later visual at its own numbered heading, preserve a 1280×720 canvas, show no neighboring workflow stage, keep the synchronized narration unchanged, and visually verify the rendered MP4 before any replacement upload.
+- Replayed the complete golden path from a clean demo reset through the approval-gated local handoff on `run-796ee8d7-a9a5-4d67-987b-db673072bd94`. Verification retained eight exit-0 command facts, zero normalized OSV findings, the selected advisory absent, four exact committed files, and remote publication locked.
+- Re-captured Isolate, Targeted Test, Verification, Evidence Report, and Git Handoff from their own top-aligned section boundaries at 1280×720. The replacement frames contain one stage each; no partial next-stage card is visible.
+- Re-rendered with the existing nine neural narration clips, so wording, voice, and slide timing remain synchronized. Five midpoint extracts from the final MP4 confirmed clean framing from `04 · Isolate` through `10 · Handoff`.
+- The corrected local cut is 2:18.17 with one H.264 video track and one AAC audio track. SHA-256: `feac6ec01379b859108eb6205d9d5910ace00a5f31e08edd7818d7f8dba60619`.
+- Scope expansions: none. Product behavior, narration, public visibility, Devpost state, and remote repository publication are unchanged.
