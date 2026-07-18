@@ -172,6 +172,8 @@ Reset before another take:
 
 Run artifacts are owner-local and ignored under `runs/`. Restarting the server clears in-memory workflow state.
 
+For the exact 2:55 narration, expected screen states, three-run acceptance evidence, and recording fallback plan, use the [three-minute demo script](docs/demo-script.md).
+
 ## Running against another local repository
 
 This hackathon build does **not** expose arbitrary local-repository onboarding. The server deliberately fixes its target to `demo/vulnerable-node-app`, and mutation validators are specific to the selected json5 advisory, four files, commands, function, and test.
@@ -254,6 +256,6 @@ The project also builds on OpenAI’s JavaScript SDK, React, Vite, Zod, Vitest, 
 
 ## Roadmap
 
-Before submission, the only active work is the three-minute demo rehearsal and submission package. No new product feature enters the freeze path.
+Before submission, the only active work is the public video and submission package. The timed script and three consecutive golden-path rehearsals are complete; no new product feature enters the freeze path.
 
 Post-hackathon possibilities include safe arbitrary-local-npm onboarding, advisory-independent patch contracts, optional approval-gated draft PR publication, multi-advisory triage, Dependabot ingestion, more ecosystems, runtime evidence, and team workflows. They are ideas—not implemented support or commitments. See [Roadmap](docs/roadmap.md).

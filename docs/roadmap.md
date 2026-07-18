@@ -6,10 +6,10 @@ The roadmap is a parking lot for post-hackathon exploration, not a claim of impl
 
 Only submission reliability work is active:
 
-1. verify documentation from a clean clone;
-2. rehearse the complete demo three times without manual repair;
-3. record a public sub-three-minute video;
-4. finish Devpost copy, built-with list, `/feedback` reference, links, and final checklist.
+1. record the rehearsed public sub-three-minute video;
+2. finish Devpost copy, built-with list, `/feedback` reference, links, and final checklist.
+
+Clean-clone documentation acceptance and three consecutive golden-path rehearsals are complete.
 
 No new product feature enters this phase.
 

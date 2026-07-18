@@ -202,3 +202,16 @@
 - Exact-snapshot clean-clone acceptance passed on candidate commit `c9367b524f08`: `npm ci`, the documentation contract, typechecks, all 62 tests, production builds, verified OSV-Scanner 2.3.8 setup, clean nested-fixture reset, baseline tests/build, and the live expected `GHSA-9c47-m6qq-7p4h` finding all passed.
 - Public repository hygiene passed with no internal-planning tool references. The main Codex task ID remains recorded for the submission `/feedback` requirement.
 - Scope expansions: none. Production operations, arbitrary repositories, publication, extra ecosystems, dashboards, monitoring, SBOMs, and submission/demo-script work remain out of this issue.
+
+## 2026-07-18 — Issue 16: three-minute demo script and rehearsal acceptance
+
+- Acceptance target: cover detect through report plus Codex/GPT-5.6 contribution, pass three consecutive rehearsals without manual repair, and keep the recorded story under three minutes.
+- Replaced the placeholder with a 2:55 recording runbook containing exact framing, all 11 clicks, expected screen states, 270 words of narration, deterministic-versus-model trust language, reset/preflight instructions, failure recovery, and a fallback asset index.
+- The fallback is intentionally fail-closed: a scanner, test, build, rescan, Git, browser, or recorder failure ends the take. It may not be skipped, manually repaired on camera, or described as success. Explicit cached model fixtures remove model-service variance without substituting scanner or command facts.
+- Preflight initially failed because an older local PatchPilot process still held port 4173. The stale process was identified exactly and stopped; no rehearsal was counted until a fresh reset and launch reached the initial scan state.
+- An early rehearsal observer timed out while waiting for a transient verification loading label even though the UI had already rendered the verified next state. Inspection proved all eight deterministic commands and the rescan had passed. The observer was changed to poll the expected visible state directly, and the consecutive-run count restarted from zero.
+- Three independent acceptance runs then passed from clean `main` at the nested fixture's `vulnerable` tag. First-click-to-handoff times were 12.87s, 13.58s, and 13.43s; every run completed 11/11 actions without manual repair or browser warnings/errors.
+- Terminal evidence matched on all three runs: verified status, three valid repository evidence references, eight command facts, selected advisory absent, exact four-file commit, clean source checkout, and remote publication `not_requested`. Local commits were `d869050df851`, `a344e91787e8`, and `3fe2dab24443`.
+- Extended the documentation contract to require the runbook sections, exact action labels, completed rehearsal rows, screenshot assets, and valid local links.
+- M4 is complete. Public video capture and submission packaging remain M5 work; no recording was falsely claimed in this issue.
+- Scope expansions: none. No product code, long-form tutorial, remote publication, new integration, or production feature was added.

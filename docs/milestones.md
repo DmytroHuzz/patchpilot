@@ -47,8 +47,10 @@
 - [x] Final report screen and download/copy handoff controls complete.
 - [x] Verified local patch commit and accurate draft-PR copy complete; remote publication remains approval-locked.
 - [x] Judge-ready README, architecture/security/testing docs, real UI screenshots, and clean-clone instructions complete.
-- [ ] Three-minute demo script, rehearsal evidence, and fallback plan complete.
-- [ ] Full demo succeeds three consecutive times without manual repair.
+- [x] Three-minute demo script, rehearsal evidence, and fallback plan complete.
+- [x] Full demo succeeds three consecutive times without manual repair.
+
+**M4 passed 2026-07-18:** the 2:55 storyboard covers the complete golden path and AI contribution; three independent reset-to-handoff browser runs passed in 12.87s, 13.58s, and 13.43s with clean logs and no manual repair.
 
 ## M5 — Submission
 

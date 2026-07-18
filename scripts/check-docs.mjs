@@ -41,6 +41,16 @@ const requiredSecurityHeadings = [
   "Log redaction",
   "Verification claims",
 ];
+const requiredDemoHeadings = [
+  "Acceptance contract",
+  "Recording preflight",
+  "Timed storyboard",
+  "Exact click order",
+  "Reset between takes",
+  "Fallback plan",
+  "Fallback assets",
+  "Rehearsal evidence",
+];
 
 function assertHeadings(file, headings) {
   const contents = read(file);
@@ -51,6 +61,25 @@ function assertHeadings(file, headings) {
 assertHeadings("README.md", requiredReadmeHeadings);
 assertHeadings("docs/architecture.md", requiredArchitectureHeadings);
 assertHeadings("docs/security-model.md", requiredSecurityHeadings);
+assertHeadings("docs/demo-script.md", requiredDemoHeadings);
+
+const demoScript = read("docs/demo-script.md");
+for (const action of [
+  "Run deterministic scan",
+  "Investigate affectedness",
+  "Review remediation plan",
+  "Approve this exact plan",
+  "Create isolated workspace",
+  "Apply approved dependency update",
+  "Repair source compatibility",
+  "Add targeted regression test",
+  "Run full verification",
+  "Generate evidence report",
+  "Create local commit + PR copy",
+]) {
+  if (!demoScript.includes(`**${action}**`)) throw new Error(`Demo script is missing exact action: ${action}`);
+}
+if (demoScript.includes("| Pending")) throw new Error("Demo rehearsal evidence is still pending");
 
 const markdownFiles = [
   "README.md",
@@ -75,4 +104,4 @@ for (const screenshot of ["docs/assets/patchpilot-investigation.jpg", "docs/asse
   if (!existsSync(path.join(root, screenshot))) throw new Error(`Required screenshot is missing: ${screenshot}`);
 }
 
-console.log(`Documentation contract passed: ${requiredReadmeHeadings.length + 1} README requirements, diagrams, safety sections, screenshots, and local links.`);
+console.log(`Documentation contract passed: ${requiredReadmeHeadings.length + 1} README requirements, diagrams, safety sections, demo runbook, screenshots, and local links.`);

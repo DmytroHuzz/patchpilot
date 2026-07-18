@@ -46,7 +46,7 @@ The recorded path is one continuous local UI story:
 6. show baseline/post-patch command facts and selected-advisory absence;
 7. generate the evidence report and finish on the review-ready local commit/PR copy with remote publication locked.
 
-Issue #16 owns the sub-three-minute narration, three consecutive rehearsals, and fallback screenshots. The demo uses checked-in model fixtures by default so OpenAI availability is not a recording dependency; scanner/test/build/Git actions remain real.
+Issue #16 completed the 2:55 narration, exact 11-click storyboard, three consecutive reset-to-handoff rehearsals, and fallback plan. The demo uses checked-in model fixtures by default so OpenAI availability is not a recording dependency; scanner/test/build/Git actions remain real. See the [three-minute demo script](demo-script.md) for the recording runbook and acceptance evidence.
 
 ## Submission requirements
 
