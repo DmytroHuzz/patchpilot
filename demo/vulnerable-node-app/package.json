@@ -1,0 +1,19 @@
+{
+  "name": "patchpilot-golden-demo",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Disposable vulnerable fixture for the PatchPilot hackathon demo",
+  "type": "commonjs",
+  "scripts": {
+    "build": "node --check src/theme.js && node --check src/cli.js",
+    "start": "node src/cli.js",
+    "test": "node --test"
+  },
+  "dependencies": {
+    "json5": "1.0.1"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}
+
