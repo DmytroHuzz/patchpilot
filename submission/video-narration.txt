@@ -1,0 +1,17 @@
+A dependency scanner can flag a package, but maintainers still have to prove repository impact, choose a safe fix, and verify it. PatchPilot closes that evidence gap.
+
+Here OSV-Scanner finds one real high-severity advisory in the bundled repository. The ID, installed version, affected range, and fix version come from the scanner, not the model.
+
+PatchPilot finds the actual import and parse call, then asks GPT-5.6 to interpret only that bounded evidence. The conclusion is explicitly interpretation, with citations, confidence, unknowns, and next checks.
+
+Before any write, it shows the complete four-file plan: exact version, source repair, benign regression test, commands, risks, and rollback. One human approval is bound to this exact plan.
+
+Writes happen only in an isolated Git worktree. The approved npm update changes the manifest and lockfile, GPT-5.6 proposes one constrained function replacement, and one safe allowlist regression test passes. Exact diff checkpoints stop unrelated changes.
+
+Verification compares the vulnerable baseline with the patch: clean installs, existing and targeted tests, full tests, builds, then a lockfile-scoped OSV rescan. These are real command facts. The selected advisory is gone, but PatchPilot does not claim the repository is universally secure.
+
+The evidence report preserves the finding, repository citations, model interpretation, human approval, exact diffs, command results, clean rescan, remaining uncertainty, and next checks in reviewable Markdown and JSON.
+
+The handoff commits exactly four approved files and prepares accurate pull-request copy. It never pushes, opens, or merges remotely without a separate approval and configured target.
+
+Codex built, tested, and operated this repository workflow. GPT-5.6 performs bounded interpretation and proposals; deterministic tools remain authoritative. PatchPilot turns one alert into a human-reviewed, evidence-backed fix.

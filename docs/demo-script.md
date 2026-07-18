@@ -106,3 +106,7 @@ Acceptance ran on 2026-07-18 with `OPENAI_API_KEY` removed. Before every row, th
 | 3 | 13.43 seconds | 11/11 | Yes | `3fe2dab24443` · four files | `not_requested` | 0 | No |
 
 All three terminal screens also showed `✓ VERIFIED`, `3 VALID` evidence references, eight command facts, `✓ ABSENT`, `4 EXACT`, and `LOCKED · NOT REQUESTED`. The 270-word narration is allocated 175 seconds, so the storyboard itself—not only the fast automated UI execution—fits the three-minute limit with five seconds of margin.
+
+## Local review cut
+
+Issue #17 renders the approved narration and actual UI captures into an ignored local MP4 using native macOS tooling. The current review cut is 2:22.67 at 1280×720 with H.264 video and AAC narration. See [submission video assets](../submission/README.md) to reproduce it. It is not a public video until a human reviews and explicitly approves upload.

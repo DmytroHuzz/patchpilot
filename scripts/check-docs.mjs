@@ -84,6 +84,7 @@ if (demoScript.includes("| Pending")) throw new Error("Demo rehearsal evidence i
 const markdownFiles = [
   "README.md",
   "CONTRIBUTING.md",
+  "submission/README.md",
   ...readdirSync(path.join(root, "docs"), { recursive: true })
     .filter((file) => typeof file === "string" && file.endsWith(".md"))
     .map((file) => path.join("docs", file)),
@@ -102,6 +103,14 @@ if (brokenLinks.length > 0) throw new Error(`Broken local documentation links:\n
 
 for (const screenshot of ["docs/assets/patchpilot-investigation.jpg", "docs/assets/patchpilot-handoff.jpg"]) {
   if (!existsSync(path.join(root, screenshot))) throw new Error(`Required screenshot is missing: ${screenshot}`);
+}
+
+for (const videoSource of [
+  "submission/video-narration.txt",
+  "scripts/render-demo-video.sh",
+  "scripts/render-demo-video.swift",
+]) {
+  if (!existsSync(path.join(root, videoSource))) throw new Error(`Submission video source is missing: ${videoSource}`);
 }
 
 console.log(`Documentation contract passed: ${requiredReadmeHeadings.length + 1} README requirements, diagrams, safety sections, demo runbook, screenshots, and local links.`);

@@ -215,3 +215,14 @@
 - Extended the documentation contract to require the runbook sections, exact action labels, completed rehearsal rows, screenshot assets, and valid local links.
 - M4 is complete. Public video capture and submission packaging remain M5 work; no recording was falsely claimed in this issue.
 - Scope expansions: none. No product code, long-form tutorial, remote publication, new integration, or production feature was added.
+
+## 2026-07-18 — Issue 17 partial: local submission video review cut
+
+- User-authorized scope for this pass: make a reviewable video. Public upload, video URL, Devpost submission, `/feedback`, and Issue #17 completion remain separately approval-gated.
+- Captured ten actual 1280×720 UI states from one clean cached-model golden run: ready, finding, investigation, plan, approval, isolation, patch/test, verification, report, and local handoff. The run completed with verified status, three valid evidence references, eight command facts, selected advisory absent, four exact committed files, remote publication locked, and zero browser warnings/errors.
+- The host did not have FFmpeg. To avoid a system-wide dependency install, added a native macOS renderer using `say`, Swift, AppKit, CoreVideo, and AVFoundation. Checked-in captures plus narration make the cut reproducible; large generated media remains ignored.
+- The first render attempt used the Swift interpreter, which rejected the async `@main` renderer before producing an MP4. The wrapper now compiles the type-checked renderer with `swiftc -parse-as-library` and then executes it.
+- The successful local review cut is 2:22.67, 1280×720, H.264 video plus mono AAC narration at 22.05 kHz, approximately 17 MB, with one video and one audio track.
+- Extracted five frames from the finished MP4 at 1.40s, 35.67s, 71.33s, 107.00s, and 139.80s. Visual review confirmed readable overlays and actual UI proof through investigation, isolation, clean rescan/report, and the final `4 EXACT` / `LOCKED · NOT REQUESTED` handoff.
+- The MP4 remains under ignored `submission/artifacts/patchpilot-demo.mp4` for human review. No upload, public link, Devpost mutation, or submission claim occurred.
+- Scope expansions: none. Submission tooling and review artifact only; no product feature changed.

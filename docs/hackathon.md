@@ -56,6 +56,8 @@ Issue #16 completed the 2:55 narration, exact 11-click storyboard, three consecu
 - Main Codex task `/feedback` reference and retained task ID.
 - Green CI, repeatable reset, three successful rehearsals, and final pre-deadline checklist.
 
+A local 2:22.67 H.264/AAC review cut and its reproducible render sources are available through [Submission video assets](../submission/README.md). Public upload and the final video URL remain pending explicit review and approval.
+
 ## Submission checklist
 
 See `docs/milestones.md` for the active checklist. Repository access, clean-clone instructions, license, repeatable reset, three rehearsals, green CI, public sub-three-minute video, Devpost copy, repository/video links, `/feedback` reference, built-with list, acknowledgements, limitations, and pre-deadline submission are mandatory.

@@ -12,3 +12,4 @@ demo/vulnerable-node-app/node_modules/
 demo/vulnerable-node-app/.patchpilot-reset/
 demo/vulnerable-node-app/.git/
 tools/bin/
+submission/artifacts/
