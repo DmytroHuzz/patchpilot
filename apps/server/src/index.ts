@@ -3,6 +3,7 @@ import { stat } from "node:fs/promises";
 import { createServer, type IncomingMessage } from "node:http";
 import path from "node:path";
 import {
+  CompatibilityRepairRequestSchema,
   DependencyUpdateRequestSchema,
   IsolationRequestSchema,
   RemediationDecisionRequestSchema,
@@ -12,6 +13,7 @@ import { RemediationApprovalStore } from "./remediation/approvalGate.js";
 import { createRemediationProposal } from "./remediation/createRemediationProposal.js";
 import { createIsolatedGitWorkspace, IsolationRunStore } from "./remediation/isolateRepository.js";
 import { applyApprovedDependencyUpdate, DependencyUpdateStore } from "./remediation/updateDependency.js";
+import { CompatibilityRepairStore, runCompatibilityRepairLoop } from "./remediation/repairCompatibilityLoop.js";
 import { scanRepository } from "./scanning/osvScanner.js";
 
 export const serviceName = "PatchPilot orchestrator";
@@ -22,6 +24,7 @@ const port = Number(process.env.PORT ?? 4173);
 const approvalStore = new RemediationApprovalStore();
 const isolationRunStore = new IsolationRunStore();
 const dependencyUpdateStore = new DependencyUpdateStore();
+const compatibilityRepairStore = new CompatibilityRepairStore();
 
 const contentTypes: Record<string, string> = {
   ".css": "text/css; charset=utf-8",
@@ -158,6 +161,40 @@ const server = createServer(async (request, response) => {
     return;
   }
 
+  if (request.method === "POST" && request.url === "/api/demo/compatibility-repair") {
+    try {
+      const repairRequest = CompatibilityRepairRequestSchema.parse(await readJsonBody(request));
+      const existing = compatibilityRepairStore.getByRun(repairRequest.runId);
+      if (existing) {
+        if (existing.planId !== repairRequest.planId) throw new Error("Repair run does not match the requested approved plan");
+        response.writeHead(200, { "content-type": "application/json" });
+        response.end(JSON.stringify(existing));
+        return;
+      }
+      const proposal = approvalStore.get(repairRequest.planId);
+      const isolationRun = isolationRunStore.getById(repairRequest.runId);
+      const dependencyUpdate = dependencyUpdateStore.getByRun(repairRequest.runId);
+      if (!proposal || !isolationRun || !dependencyUpdate) {
+        throw new Error("Approved dependency-updated isolation run is unknown or expired");
+      }
+      const result = await runCompatibilityRepairLoop({
+        proposal,
+        isolationRun,
+        dependencyUpdate,
+        boundaryRoot: root,
+        resultRoot: path.join(root, "runs/audit"),
+        fixturePath: path.join(root, "demo/expected/compatibility-repair.json"),
+      });
+      const stored = compatibilityRepairStore.register(result);
+      response.writeHead(200, { "content-type": "application/json" });
+      response.end(JSON.stringify(stored));
+    } catch (error) {
+      response.writeHead(400, { "content-type": "application/json" });
+      response.end(JSON.stringify({ error: error instanceof Error ? error.message : "Compatibility repair failed" }));
+    }
+    return;
+  }
+
   const requestPath = request.url === "/" ? "/index.html" : (request.url ?? "/index.html");
   const filePath = path.resolve(webRoot, `.${requestPath}`);
   if (!filePath.startsWith(`${webRoot}${path.sep}`)) {
@@ -176,5 +213,5 @@ const server = createServer(async (request, response) => {
 });
 
 server.listen(port, "127.0.0.1", () => {
-  console.log(`PatchPilot Milestone 3 dependency patch gate: http://127.0.0.1:${port}`);
+  console.log(`PatchPilot Milestone 3 bounded source repair: http://127.0.0.1:${port}`);
 });

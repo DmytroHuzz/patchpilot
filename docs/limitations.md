@@ -9,4 +9,5 @@
 - Remediation-plan approvals are in-memory and single-session; restarting the server clears the record.
 - Isolation state is in-memory for the active server, while its branch, worktree, and ignored JSON audit artifact remain local until a later patch run or explicit cleanup.
 - The dependency step currently supports only the golden direct dependency `json5` and the exact approved version command.
-- The current flow stops after the dependency-only diff. Compatibility repair, targeted tests, build, rescan, commit, automatic push, and merge remain later or explicitly excluded steps.
+- Compatibility repair is limited to the golden `parseUserTheme` function and a syntax-only probe. It cannot diagnose arbitrary upgrade breakage and stops after two failed attempts.
+- The current flow stops after the syntax-checked dependency and source diff. Targeted tests, full tests, build, rescan, commit, automatic push, and merge remain later or explicitly excluded steps.

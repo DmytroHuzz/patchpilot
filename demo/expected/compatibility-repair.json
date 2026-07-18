@@ -1,0 +1,19 @@
+{
+  "model": "gpt-5.6",
+  "source": "cached-demo",
+  "proposal": {
+    "attempt": 1,
+    "action": "apply_replacement",
+    "classification": "planned_source_hardening",
+    "explanation": "Keep JSON5 parsing behavior but copy only the supported accent and density fields into a fresh object instead of spreading every parsed property.",
+    "file": "src/theme.js",
+    "oldText": "function parseUserTheme(rawTheme) {\n  const userTheme = JSON5.parse(rawTheme);\n\n  return {\n    ...DEFAULT_THEME,\n    ...userTheme,\n  };\n}",
+    "newText": "function parseUserTheme(rawTheme) {\n  const userTheme = JSON5.parse(rawTheme);\n\n  return {\n    accent: typeof userTheme.accent === \"string\" ? userTheme.accent : DEFAULT_THEME.accent,\n    density: typeof userTheme.density === \"string\" ? userTheme.density : DEFAULT_THEME.density,\n  };\n}",
+    "compatibilityRisks": [
+      "Callers that rely on unrecognized theme fields will no longer receive those fields."
+    ],
+    "remainingUnknowns": [
+      "Runtime callers outside the bounded repository evidence may expect additional theme fields."
+    ]
+  }
+}

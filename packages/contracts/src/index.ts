@@ -259,6 +259,147 @@ export const DependencyUpdateRequestSchema = z.object({
 
 export type DependencyUpdateRequest = z.infer<typeof DependencyUpdateRequestSchema>;
 
+export const CompatibilityRepairProposalSchema = z.object({
+  attempt: z.union([z.literal(1), z.literal(2)]),
+  action: z.enum(["apply_replacement", "stop_unrelated", "stop_insufficient_evidence"]),
+  classification: z.enum(["planned_source_hardening", "upgrade_compatibility_failure", "unrelated_failure", "insufficient_evidence"]),
+  explanation: z.string().min(1).max(2000),
+  file: z.literal("src/theme.js").nullable(),
+  oldText: z.string().min(1).max(4096).nullable(),
+  newText: z.string().min(1).max(4096).nullable(),
+  compatibilityRisks: z.array(z.string().min(1)).min(1).max(6),
+  remainingUnknowns: z.array(z.string().min(1)).min(1).max(6),
+}).strict().superRefine((proposal, context) => {
+  if (proposal.action === "apply_replacement") {
+    if (proposal.file === null || proposal.oldText === null || proposal.newText === null) {
+      context.addIssue({ code: z.ZodIssueCode.custom, message: "Applied repairs require file, oldText, and newText" });
+    }
+    if (!(["planned_source_hardening", "upgrade_compatibility_failure"] as const).includes(
+      proposal.classification as "planned_source_hardening" | "upgrade_compatibility_failure",
+    )) {
+      context.addIssue({ code: z.ZodIssueCode.custom, message: "Applied repair classification is invalid" });
+    }
+  } else if (proposal.file !== null || proposal.oldText !== null || proposal.newText !== null) {
+    context.addIssue({ code: z.ZodIssueCode.custom, message: "Stopped repairs cannot include an edit" });
+  }
+  if (proposal.action === "stop_unrelated" && proposal.classification !== "unrelated_failure") {
+    context.addIssue({ code: z.ZodIssueCode.custom, message: "Unrelated stops require an unrelated-failure classification" });
+  }
+  if (proposal.action === "stop_insufficient_evidence" && proposal.classification !== "insufficient_evidence") {
+    context.addIssue({ code: z.ZodIssueCode.custom, message: "Insufficient-evidence stops require the matching classification" });
+  }
+});
+
+export type CompatibilityRepairProposal = z.infer<typeof CompatibilityRepairProposalSchema>;
+
+export const CompatibilityRepairProposalRunSchema = z.object({
+  model: z.literal("gpt-5.6"),
+  source: z.enum(["openai", "cached-demo"]),
+  proposal: CompatibilityRepairProposalSchema,
+}).strict();
+
+export type CompatibilityRepairProposalRun = z.infer<typeof CompatibilityRepairProposalRunSchema>;
+
+export const SyntaxProbeResultSchema = z.object({
+  command: z.literal("node --check src/theme.js"),
+  exitCode: z.number().int(),
+  passed: z.boolean(),
+  durationMs: z.number().int().nonnegative(),
+  stdout: z.string().max(4096),
+  stderr: z.string().max(4096),
+}).strict().superRefine((probe, context) => {
+  if (probe.passed !== (probe.exitCode === 0)) {
+    context.addIssue({ code: z.ZodIssueCode.custom, message: "Syntax probe pass state must match its exit code" });
+  }
+});
+
+export type SyntaxProbeResult = z.infer<typeof SyntaxProbeResultSchema>;
+
+export const CompatibilityRepairAttemptSchema = z.object({
+  attempt: z.union([z.literal(1), z.literal(2)]),
+  proposalRun: CompatibilityRepairProposalRunSchema,
+  status: z.enum(["applied_passed", "applied_failed", "stopped"]),
+  probe: SyntaxProbeResultSchema.nullable(),
+}).strict().superRefine((attempt, context) => {
+  if (attempt.attempt !== attempt.proposalRun.proposal.attempt) {
+    context.addIssue({ code: z.ZodIssueCode.custom, message: "Attempt number must match the repair proposal" });
+  }
+  if (attempt.status === "stopped" && attempt.probe !== null) {
+    context.addIssue({ code: z.ZodIssueCode.custom, message: "Stopped attempts cannot have a syntax probe" });
+  }
+  if (attempt.status !== "stopped" && attempt.probe === null) {
+    context.addIssue({ code: z.ZodIssueCode.custom, message: "Applied attempts require a syntax probe" });
+  }
+  if (attempt.status === "applied_passed" && attempt.probe?.passed !== true) {
+    context.addIssue({ code: z.ZodIssueCode.custom, message: "Passed attempts require a passing probe" });
+  }
+  if (attempt.status === "applied_failed" && attempt.probe?.passed !== false) {
+    context.addIssue({ code: z.ZodIssueCode.custom, message: "Failed attempts require a failing probe" });
+  }
+  if (attempt.status === "stopped" && attempt.proposalRun.proposal.action === "apply_replacement") {
+    context.addIssue({ code: z.ZodIssueCode.custom, message: "Stopped attempts require an explicit stop proposal" });
+  }
+  if (attempt.status !== "stopped" && attempt.proposalRun.proposal.action !== "apply_replacement") {
+    context.addIssue({ code: z.ZodIssueCode.custom, message: "Applied attempts require a replacement proposal" });
+  }
+});
+
+export type CompatibilityRepairAttempt = z.infer<typeof CompatibilityRepairAttemptSchema>;
+
+export const CompatibilityRepairResultSchema = z.object({
+  runId: z.string().regex(/^run-[0-9a-f-]{36}$/),
+  planId: z.string().regex(/^plan-[a-f0-9]{64}$/),
+  status: z.enum(["repaired", "failed_after_two_attempts", "stopped"]),
+  file: z.literal("src/theme.js"),
+  attempts: z.array(CompatibilityRepairAttemptSchema).min(1).max(2),
+  changedFiles: z.array(z.enum(["package-lock.json", "package.json", "src/theme.js"])),
+  sourceCheckoutClean: z.literal(true),
+  sourceRestored: z.boolean(),
+  sourceDiff: z.string().max(64 * 1024),
+  resultLogPath: z.string().min(1),
+  completedAt: z.string().datetime(),
+}).strict().superRefine((result, context) => {
+  if (result.attempts.some((attempt, index) => attempt.attempt !== index + 1)) {
+    context.addIssue({ code: z.ZodIssueCode.custom, message: "Repair attempts must be ordered and contiguous" });
+  }
+  if (result.status !== "failed_after_two_attempts" && result.attempts.slice(0, -1).some((attempt) => attempt.status !== "applied_failed")) {
+    context.addIssue({ code: z.ZodIssueCode.custom, message: "Only a failed applied attempt may precede the terminal attempt" });
+  }
+  if (result.status === "repaired") {
+    if (result.sourceRestored || result.sourceDiff.length === 0 || result.attempts.at(-1)?.status !== "applied_passed") {
+      context.addIssue({ code: z.ZodIssueCode.custom, message: "Repaired results require a retained passing source diff" });
+    }
+    if (result.changedFiles.join(",") !== "package-lock.json,package.json,src/theme.js") {
+      context.addIssue({ code: z.ZodIssueCode.custom, message: "Repaired results require exactly the approved three-file diff" });
+    }
+  }
+  if (result.status === "failed_after_two_attempts") {
+    if (result.attempts.length !== 2 || result.attempts.some((attempt) => attempt.status !== "applied_failed") || !result.sourceRestored || result.sourceDiff !== "") {
+      context.addIssue({ code: z.ZodIssueCode.custom, message: "Exhausted repairs must record two failures and restore the source" });
+    }
+    if (result.changedFiles.join(",") !== "package-lock.json,package.json") {
+      context.addIssue({ code: z.ZodIssueCode.custom, message: "Exhausted repairs must retain only the dependency update" });
+    }
+  }
+  if (result.status === "stopped") {
+    if (result.attempts.at(-1)?.status !== "stopped" || result.sourceDiff !== "" || result.sourceRestored !== (result.attempts.length === 2)) {
+      context.addIssue({ code: z.ZodIssueCode.custom, message: "Stopped repairs cannot retain a source edit" });
+    }
+    if (result.changedFiles.join(",") !== "package-lock.json,package.json") {
+      context.addIssue({ code: z.ZodIssueCode.custom, message: "Stopped repairs must retain only the dependency update" });
+    }
+  }
+});
+
+export type CompatibilityRepairResult = z.infer<typeof CompatibilityRepairResultSchema>;
+
+export const CompatibilityRepairRequestSchema = z.object({
+  planId: z.string().regex(/^plan-[a-f0-9]{64}$/),
+  runId: z.string().regex(/^run-[0-9a-f-]{36}$/),
+}).strict();
+
+export type CompatibilityRepairRequest = z.infer<typeof CompatibilityRepairRequestSchema>;
+
 export const NormalizedScanResultSchema = z.object({
   scanner: z.literal("osv-scanner"),
   scannerVersion: z.string().min(1),

@@ -119,3 +119,19 @@
 - Browser acceptance passed detect → investigate → approve → isolate → update. It displayed the exact command with exit 0, version proof, two changed files, zero unrelated changes, complete diff, clean-source badge, and next-step boundary with no browser log errors.
 - No compatibility source repair, regression test generation, post-patch test/build, rescan, branch commit, push, merge, other ecosystem, or new AI work was added.
 - Scope expansions: none.
+
+## 2026-07-18 — Issue 10: bounded compatibility repair loop
+
+- Acceptance target: apply the golden source/configuration change inside the approved isolated branch, send only relevant bounded evidence to a repair attempt, and stop honestly after at most two failures.
+- Added strict repair proposal, attempt, syntax-probe, request, and result contracts. Successful results require the exact three-file diff; stopped or exhausted results require a restored source and the dependency-only diff.
+- GPT‑5.6 receives six bounded groups: attempt, approved plan facts, dependency-update facts, the exact extracted `parseUserTheme` function, an optional filtered previous syntax failure, and fixed constraints. The explicit cached fixture uses the same schema and semantic validator.
+- The validator allows only one exact `src/theme.js` function replacement, preserves the signature and JSON5 parse, requires narrow `accent`/`density` copying with defaults, and rejects stale text, broad object spreads, imports, commands, dependency changes, and dynamic execution.
+- The executor revalidates approval/run identity, branch, baseline, canonical boundaries, source cleanliness, the exact dependency-only checkpoint, and the recorded dependency diff. It runs only `node --check src/theme.js`, permits two attempts, supplies only bounded/redacted relevant syntax lines on retry, and restores the original source after exhaustion or mutation-time exceptions.
+- Real temporary-Git tests cover a one-attempt passing repair and two failing attempts with source restoration. A strict contract regression test rejects an exhausted result that claims a retained source-file change.
+- The first live acceptance command used top-level `await` with `tsx -e`, whose CommonJS eval mode rejected it before any write. Wrapping the same runner in an async function succeeded.
+- Live acceptance on `run-895a4677-425f-4081-b517-0661aae85aae` applied the cached golden repair in one attempt, passed the real syntax probe, retained exactly `package-lock.json`, `package.json`, and `src/theme.js`, wrote the ignored result artifact, and left the bundled source checkout clean on `main`.
+- Final review tightened action/classification pairing, rejected replacement text with appended code, validated cached-result plan identity, and made the stopped UI distinguish honest evidence stops from two-attempt exhaustion. A dedicated stop-path test proves no syntax probe or source write occurs for an unrelated failure classification.
+- `npm run check` passed 47 tests across server and contracts plus all production builds. Clean-reset baseline tests/build and the live vulnerable OSV scan also passed; public repository files contain no internal-planning references.
+- Browser acceptance passed detect → investigate → approve → isolate → update → repair. The final panel visibly showed cached-contract provenance, attempt 1/2, passing syntax, clean source checkout, exact source diff, compatibility risk, remaining unknown, and the no-full-verification boundary with no browser warnings or errors.
+- The accepted browser run `run-3372aa96-f05a-4f1b-9d2d-21644a7fb5b3` remains in its isolated three-file state for Issue #11. Targeted test generation, full patched-repository verification, rescan, branch commit/push, merge, and reporting did not run.
+- Scope expansions: none.

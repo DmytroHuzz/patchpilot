@@ -1,6 +1,6 @@
 # Architecture
 
-This document grows only with implemented milestones. Patch application, verification, and report generation remain placeholders until their issues begin.
+This document grows only with implemented milestones. Targeted-test generation, full verification, rescan, and report generation remain placeholders until their issues begin.
 
 The Milestone 1 slice is: bundled npm fixture → OSV-Scanner subprocess → validated normalized finding → findings UI.
 
@@ -65,3 +65,12 @@ OSV and command output are deterministic facts. There is no model call or interp
 - The executor snapshots `package.json` and `package-lock.json`, then requires json5 to reach the planned version in the manifest, lockfile root, and locked package entry.
 - Parsed manifest and lockfile copies with only json5 removed must remain structurally identical. Git must report exactly `package.json` and `package-lock.json` as changed.
 - The complete dependency diff, bounded command result, version proof, and clean-source fact are validated and written to a separate ignored JSON artifact. Compatibility repair, tests, build, rescan, and branch commit do not run in Issue #9.
+
+## Implemented M3 compatibility-repair boundary
+
+- `POST /api/demo/compatibility-repair` requires the same approved plan, ready isolation run, and recorded successful dependency update from the active server session. Run and plan IDs must agree.
+- Before a source write, the executor rechecks canonical paths, isolated branch and baseline, clean source checkout, the exact two-file dependency checkpoint, and byte-for-byte equality with the recorded dependency diff.
+- GPT‑5.6 receives exactly six bounded context groups: attempt number, approved plan facts, dependency-update facts, the extracted `parseUserTheme` function, an optional relevant previous syntax failure, and fixed constraints. The checked-in fallback is explicitly labeled and passes the same schema and semantic validator.
+- Validation permits only one exact replacement of `parseUserTheme` in `src/theme.js`. It requires the existing signature, `JSON5.parse(rawTheme)`, explicit `accent` and `density` handling with defaults, and rejects imports, dependency changes, commands, broad object spreads, and other unsafe constructs.
+- Each applied attempt runs only `node --check src/theme.js` without a shell. A retry receives only bounded, redacted source-path/caret/`SyntaxError` lines. The loop stops after two failures and restores the original source; an exception after mutation also restores it.
+- A successful run retains exactly `package-lock.json`, `package.json`, and `src/theme.js`, plus the source diff and attempt/probe audit in ignored run storage. No test generation, full suite/build, rescan, commit, or push runs in Issue #10.

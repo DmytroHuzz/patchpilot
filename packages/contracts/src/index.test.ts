@@ -1,6 +1,8 @@
 import { describe, expect, it } from "vitest";
 import {
   AffectednessAssessmentSchema,
+  CompatibilityRepairProposalSchema,
+  CompatibilityRepairResultSchema,
   DependencyUpdateResultSchema,
   IsolationRunSchema,
   NormalizedScanResultSchema,
@@ -109,5 +111,63 @@ describe("contracts package", () => {
       resultLogPath: "/safe/runs/audit/dependency.json",
       completedAt: "2026-07-18T10:30:00.000Z",
     })).toThrow("approved target");
+  });
+
+  it("rejects exhausted repairs that retain a source-file change", () => {
+    const failedAttempt = (attempt: 1 | 2) => ({
+      attempt,
+      proposalRun: {
+        model: "gpt-5.6" as const,
+        source: "cached-demo" as const,
+        proposal: {
+          attempt,
+          action: "apply_replacement" as const,
+          classification: "upgrade_compatibility_failure" as const,
+          file: "src/theme.js" as const,
+          oldText: "function parseUserTheme(rawTheme) { return rawTheme; }",
+          newText: "function parseUserTheme(rawTheme) { return JSON5.parse(rawTheme); }",
+          explanation: "The bounded parser replacement addresses the approved compatibility risk.",
+          compatibilityRisks: ["The retry may still fail syntax validation."],
+          remainingUnknowns: ["Full regression behavior has not yet been tested."],
+        },
+      },
+      status: "applied_failed" as const,
+      probe: {
+        command: "node --check src/theme.js" as const,
+        exitCode: 1,
+        passed: false,
+        durationMs: 1,
+        stdout: "",
+        stderr: "SyntaxError: Unexpected token",
+      },
+    });
+
+    expect(() => CompatibilityRepairResultSchema.parse({
+      runId: "run-00000000-0000-4000-8000-000000000009",
+      planId: `plan-${"a".repeat(64)}`,
+      status: "failed_after_two_attempts",
+      file: "src/theme.js",
+      attempts: [failedAttempt(1), failedAttempt(2)],
+      changedFiles: ["package-lock.json", "package.json", "src/theme.js"],
+      sourceCheckoutClean: true,
+      sourceRestored: true,
+      sourceDiff: "",
+      resultLogPath: "/safe/runs/audit/repair.json",
+      completedAt: "2026-07-18T10:30:00.000Z",
+    })).toThrow("dependency update");
+  });
+
+  it("requires explicit repair stops to match their failure classification", () => {
+    expect(() => CompatibilityRepairProposalSchema.parse({
+      attempt: 1,
+      action: "stop_unrelated",
+      classification: "insufficient_evidence",
+      explanation: "Stop without a source edit.",
+      file: null,
+      oldText: null,
+      newText: null,
+      compatibilityRisks: ["The failure remains unresolved."],
+      remainingUnknowns: ["The root cause is outside the bounded context."],
+    })).toThrow("unrelated-failure");
   });
 });

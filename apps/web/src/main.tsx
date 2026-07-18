@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { createRoot } from "react-dom/client";
 import type {
+  CompatibilityRepairResult,
   DependencyUpdateResult,
   IsolationRun,
   InvestigationResult,
@@ -9,7 +10,7 @@ import type {
 } from "@patchpilot/contracts";
 import "./styles.css";
 
-type Status = "ready" | "scanning" | "investigating" | "planning" | "deciding" | "isolating" | "updating" | "error";
+type Status = "ready" | "scanning" | "investigating" | "planning" | "deciding" | "isolating" | "updating" | "repairing" | "error";
 
 function sentenceCase(value: string): string {
   return value.replaceAll("_", " ");
@@ -21,6 +22,7 @@ function App() {
   const [proposal, setProposal] = useState<RemediationProposal>();
   const [isolation, setIsolation] = useState<IsolationRun>();
   const [dependencyUpdate, setDependencyUpdate] = useState<DependencyUpdateResult>();
+  const [compatibilityRepair, setCompatibilityRepair] = useState<CompatibilityRepairResult>();
   const [status, setStatus] = useState<Status>("ready");
   const [error, setError] = useState("");
 
@@ -44,6 +46,7 @@ function App() {
     setProposal(undefined);
     setIsolation(undefined);
     setDependencyUpdate(undefined);
+    setCompatibilityRepair(undefined);
     try {
       setResult(await post<NormalizedScanResult>("/api/demo/scan"));
       setStatus("ready");
@@ -59,6 +62,7 @@ function App() {
     setProposal(undefined);
     setIsolation(undefined);
     setDependencyUpdate(undefined);
+    setCompatibilityRepair(undefined);
     try {
       setInvestigation(await post<InvestigationResult>("/api/demo/investigate"));
       setStatus("ready");
@@ -125,6 +129,22 @@ function App() {
     }
   }
 
+  async function repairCompatibility() {
+    if (!proposal || !isolation || !dependencyUpdate) return;
+    setStatus("repairing");
+    setError("");
+    try {
+      setCompatibilityRepair(await post<CompatibilityRepairResult>("/api/demo/compatibility-repair", {
+        planId: proposal.id,
+        runId: isolation.id,
+      }));
+      setStatus("ready");
+    } catch (repairError) {
+      setError(repairError instanceof Error ? repairError.message : "Compatibility repair failed");
+      setStatus("error");
+    }
+  }
+
   const finding = result?.findings.find(({ id }) => id === "GHSA-9c47-m6qq-7p4h");
   const assessment = investigation?.assessmentRun.assessment;
   const assessmentSource = investigation?.assessmentRun.source;
@@ -134,8 +154,8 @@ function App() {
     <div className="shell">
       <header>
         <span className="mark">P</span><strong>PatchPilot</strong>
-        <nav><span className="active">01 Detect</span><span className={finding ? "active" : ""}>02 Investigate</span><span className={proposal ? "active" : ""}>03 Approve</span><span className={isolation ? "active" : ""}>04 Isolate</span><span className={dependencyUpdate ? "active" : ""}>05 Update</span></nav>
-        <span className="stage">M3 / DEPENDENCY PATCH</span>
+        <nav><span className="active">01 Detect</span><span className={finding ? "active" : ""}>02 Investigate</span><span className={proposal ? "active" : ""}>03 Approve</span><span className={isolation ? "active" : ""}>04 Isolate</span><span className={dependencyUpdate ? "active" : ""}>05 Update</span><span className={compatibilityRepair ? "active" : ""}>06 Repair</span></nav>
+        <span className="stage">M3 / SOURCE REPAIR</span>
       </header>
       <main>
         <section className="hero">
@@ -149,7 +169,7 @@ function App() {
             <h2>patchpilot-golden-demo</h2>
             <p>Node.js · npm · direct dependency</p>
             <code>demo/vulnerable-node-app</code>
-            <button onClick={scanDemo} disabled={["scanning", "investigating", "planning", "deciding", "isolating", "updating"].includes(status)}>
+            <button onClick={scanDemo} disabled={["scanning", "investigating", "planning", "deciding", "isolating", "updating", "repairing"].includes(status)}>
               {status === "scanning" ? "Scanning with OSV…" : "Run deterministic scan"}<span>→</span>
             </button>
             {error && <p className="error">{error}</p>}
@@ -395,6 +415,56 @@ function App() {
             <div className="ready-icon">✓</div>
             <div><strong>Dependency checkpoint complete.</strong><span>json5 reached the approved fix in both files. Source compatibility repair and regression testing are the next separately reviewed steps.</span></div>
             <code>{dependencyUpdate.completedAt}</code>
+          </div>
+          {!compatibilityRepair && <div className="repair-launch">
+            <div><strong>Dependency checkpoint passed.</strong><span>Ask GPT‑5.6 for one exact source-function replacement, then validate syntax. Maximum two attempts.</span></div>
+            <button onClick={repairCompatibility} disabled={status === "repairing"}>
+              {status === "repairing" ? "Applying bounded repair…" : "Repair source compatibility"}<span>→</span>
+            </button>
+          </div>}
+          {error && <div className="decision-error">{error}</div>}
+        </section>}
+
+        {compatibilityRepair && <section className={`compatibility-repair ${compatibilityRepair.status}`} aria-live="polite">
+          <div className="repair-title">
+            <div><p className="eyebrow">06 · BOUNDED COMPATIBILITY REPAIR</p><h2>One function. No wandering.</h2></div>
+            <div className={`source-badge ${compatibilityRepair.attempts[0]?.proposalRun.source === "openai" ? "live" : "cached"}`}>
+              <span>{compatibilityRepair.attempts[0]?.proposalRun.source === "openai" ? "LIVE OPENAI" : "CACHED CONTRACT FIXTURE"}</span>
+              <strong>GPT‑5.6 · MAX 2 ATTEMPTS</strong>
+            </div>
+          </div>
+
+          <div className="repair-facts">
+            <div><span>FILE</span><code>{compatibilityRepair.file}</code></div>
+            <div><span>ATTEMPTS</span><strong>{compatibilityRepair.attempts.length} / 2</strong></div>
+            <div><span>SYNTAX PROBE</span><strong className={compatibilityRepair.status === "repaired" ? "passed" : "failed"}>{compatibilityRepair.status === "repaired" ? "✓ PASSED" : "× STOPPED"}</strong></div>
+            <div><span>SOURCE CHECKOUT</span><strong className="passed">✓ CLEAN</strong></div>
+          </div>
+
+          <div className="repair-grid">
+            <article>
+              <p className="panel-label"><span>01</span> ATTEMPT AUDIT</p>
+              <ol className="repair-attempts">{compatibilityRepair.attempts.map((attempt) => <li key={attempt.attempt}>
+                <span>{attempt.status === "applied_passed" ? "✓" : "×"}</span>
+                <div><strong>Attempt {attempt.attempt} · {sentenceCase(attempt.status)}</strong><p>{attempt.proposalRun.proposal.explanation}</p><code>{attempt.probe?.command ?? "No command executed"}</code></div>
+              </li>)}</ol>
+              <div className="repair-boundary"><strong>Exact replacement only</strong><span>No tests, imports, dependencies, or unrelated files were generated.</span></div>
+            </article>
+            <article className="source-diff-panel">
+              <p className="panel-label"><span>02</span> PRESERVED SOURCE DIFF</p>
+              <pre>{compatibilityRepair.sourceDiff || "No source diff retained; the pre-repair file was restored."}</pre>
+            </article>
+          </div>
+
+          <div className="repair-notes">
+            <div><p className="panel-label"><span>!</span> COMPATIBILITY RISKS</p><ul>{compatibilityRepair.attempts.at(-1)?.proposalRun.proposal.compatibilityRisks.map((item) => <li key={item}>{item}</li>)}</ul></div>
+            <div><p className="panel-label"><span>?</span> REMAINING UNKNOWNS</p><ul>{compatibilityRepair.attempts.at(-1)?.proposalRun.proposal.remainingUnknowns.map((item) => <li key={item}>{item}</li>)}</ul></div>
+          </div>
+
+          <div className="repair-checkpoint">
+            <div className="ready-icon">{compatibilityRepair.status === "repaired" ? "✓" : "×"}</div>
+            <div><strong>{compatibilityRepair.status === "repaired" ? "Source repair checkpoint complete." : "Repair stopped safely."}</strong><span>{compatibilityRepair.status === "repaired" ? "The approved function changed and syntax passes. Targeted regression-test generation is the next separate issue; no full verification claim is made yet." : compatibilityRepair.status === "failed_after_two_attempts" ? "Two failed attempts cannot continue silently. The original source was restored and the dependency diff remains reviewable." : "The model classified the failure as unrelated or insufficiently supported. No source diff was retained; the dependency update remains reviewable."}</span></div>
+            <code>{compatibilityRepair.completedAt}</code>
           </div>
         </section>}
       </main>

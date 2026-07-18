@@ -36,7 +36,7 @@
 - [x] Complete remediation plan and exact-plan approval/cancel gate work.
 - [x] Isolated Git branch/worktree flow works.
 - [x] Approved dependency update changes only the manifest and lockfile.
-- [ ] Meaningful non-lockfile compatibility change occurs.
+- [x] Meaningful non-lockfile compatibility change occurs.
 - [ ] Targeted/full tests and build pass.
 - [ ] Selected finding disappears on rescan.
 
