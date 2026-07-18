@@ -24,6 +24,10 @@ The MVP is Node.js 20+, npm, local Git, one bundled direct vulnerability, OSV-Sc
 
 - Main task/session ID: `019f7422-123d-7242-a0cf-c7f6f237594b`
 - Before submission, invoke `/feedback` from this main task and record the resulting reference in the Devpost draft.
+- Public repository: https://github.com/DmytroHuzz/patchpilot
+- GitHub issues: https://github.com/DmytroHuzz/patchpilot/issues
+- Notion workspace: https://app.notion.com/p/3a1dc269d70a811ebcf5cee1164cb267
+- GitHub Projects v2 board: pending a one-time `project` and `read:project` CLI scope grant; the equivalent Notion board is live.
 
 ## Definition of done
 
@@ -32,4 +36,3 @@ A judge can follow the README to reset the demo, detect the real vulnerability, 
 ## Submission checklist
 
 See `docs/milestones.md` for the active checklist. Repository access, clean-clone instructions, license, repeatable reset, three rehearsals, green CI, public sub-three-minute video, Devpost copy, repository/video links, `/feedback` reference, built-with list, acknowledgements, limitations, and pre-deadline submission are mandatory.
-

@@ -29,3 +29,13 @@
 - Verified the UI through the real browser click path: the expected heading and all deterministic fact fields rendered from the live endpoint.
 - Milestone 1 acceptance passed. No OpenAI API call, affectedness prompt, or AI analysis was added.
 - Scope expansions: none.
+
+## 2026-07-18 — Project control synchronization
+
+- Published the clean `main` history to the public repository: https://github.com/DmytroHuzz/patchpilot.
+- Enabled GitHub Issues and Dependabot vulnerability alerts; both CI and demo-smoke workflows passed on the initial push.
+- Created milestones M1–M5, demo/priority labels, and all 17 issue-ready work items with user value, scope, acceptance criteria, dependencies, demo relevance, and explicit non-goals.
+- Closed GitHub issues 1–3 with Milestone 1 verification comments. Issue 4 is the next Ready item; no M2 code began during this synchronization.
+- Created the Notion root workspace, Project Brief, Implementation Plan, Research and Sources, Demo Story, Submission Draft, Ideas Parking Lot, Build Dashboard, 17 linked tasks, and Decisions Log with the three repository ADRs.
+- GitHub Projects v2 creation remains pending because the authenticated CLI token lacks the separate `project` and `read:project` scopes. The Notion board provides the specified status view in the meantime.
+- Scope expansions: none. This work completes the project-control deliverables already required by the specification.

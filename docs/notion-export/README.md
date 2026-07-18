@@ -1,6 +1,6 @@
-# Notion fallback export
+# Notion mirror source
 
-The Notion connector is not available in this task. These files mirror the required workspace without making Notion a runtime dependency:
+The live workspace is available at https://app.notion.com/p/3a1dc269d70a811ebcf5cee1164cb267. These files remain a repository-local mirror so Notion never becomes a runtime dependency:
 
 - `project-brief.md`
 - `build-dashboard.md`
@@ -9,4 +9,3 @@ The Notion connector is not available in this task. These files mirror the requi
 - `demo-story.md`
 - `submission-draft.md`
 - `ideas-parking-lot.md`
-

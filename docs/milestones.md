@@ -6,9 +6,10 @@
 - [x] Workspace and documentation skeleton created.
 - [x] Local issue plan and definition of done visible.
 - [x] Build journal and main Codex task ID recorded.
-- [ ] CI passes.
-- [ ] GitHub repository/issues/project created (`gh` unavailable; non-blocking).
-- [ ] Notion structure synchronized (connector unavailable; Markdown mirror created).
+- [x] CI and demo-smoke workflows pass on GitHub.
+- [x] Public GitHub repository, milestones, labels, and 17 issues created.
+- [ ] GitHub Projects v2 board created (token needs `project` and `read:project` scopes; non-blocking).
+- [x] Notion root, implementation pages, task board, linked tasks, and decision log synchronized.
 
 ## M1 — Deterministic scan
 
