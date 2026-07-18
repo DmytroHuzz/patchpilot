@@ -223,6 +223,15 @@
 - The host did not have FFmpeg. To avoid a system-wide dependency install, added a native macOS renderer using `say`, Swift, AppKit, CoreVideo, and AVFoundation. Checked-in captures plus narration make the cut reproducible; large generated media remains ignored.
 - The first render attempt used the Swift interpreter, which rejected the async `@main` renderer before producing an MP4. The wrapper now compiles the type-checked renderer with `swiftc -parse-as-library` and then executes it.
 - The successful local review cut is 2:22.67, 1280×720, H.264 video plus mono AAC narration at 22.05 kHz, approximately 17 MB, with one video and one audio track.
+
 - Extracted five frames from the finished MP4 at 1.40s, 35.67s, 71.33s, 107.00s, and 139.80s. Visual review confirmed readable overlays and actual UI proof through investigation, isolation, clean rescan/report, and the final `4 EXACT` / `LOCKED · NOT REQUESTED` handoff.
 - The MP4 remains under ignored `submission/artifacts/patchpilot-demo.mp4` for human review. No upload, public link, Devpost mutation, or submission claim occurred.
 - Scope expansions: none. Submission tooling and review artifact only; no product feature changed.
+
+## 2026-07-18 — Issue 17 partial: narration revision
+
+- Human review rejected the first system narration as too flat. Publication remains locked; this pass changes only the local review cut and its reproducible source.
+- Rewrote the voice-over from documentation-style exposition into a shorter nine-beat story aligned with the nine visual stages. Deterministic facts, model interpretation, human approval, and the limited rescan claim remain explicit.
+- Switched the default local synthetic narrator from Samantha at 150 words per minute to Reed (English, United States) at 165 words per minute. The renderer still supports voice and rate overrides for comparison.
+- An OpenAI API credential was not configured in the repository environment, so no remote text-to-speech request was attempted and no credential was invented or exposed.
+- The revised local cut passed media verification at 2:15.23, 1280×720, H.264 video plus one mono AAC narration track, 16,614,367 bytes. SHA-256: `0f7ef6e076251ce2cc56ca52af80cc77244cd1956ae612af4dc2fc89cd601de2`.

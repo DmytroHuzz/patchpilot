@@ -11,8 +11,8 @@ renderer_bin="${artifact_dir}/render-demo-video"
 
 mkdir -p "${artifact_dir}"
 
-voice="${PATCHPILOT_VIDEO_VOICE:-Samantha}"
-rate="${PATCHPILOT_VIDEO_RATE:-150}"
+voice="${PATCHPILOT_VIDEO_VOICE:-Reed (English (US))}"
+rate="${PATCHPILOT_VIDEO_RATE:-165}"
 
 say -v "${voice}" -r "${rate}" -f "${narration_file}" -o "${audio_file}"
 swiftc -parse-as-library "${script_dir}/render-demo-video.swift" -o "${renderer_bin}"

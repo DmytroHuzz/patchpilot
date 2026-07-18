@@ -105,8 +105,8 @@ Acceptance ran on 2026-07-18 with `OPENAI_API_KEY` removed. Before every row, th
 | 2 | 13.58 seconds | 11/11 | Yes | `a344e91787e8` · four files | `not_requested` | 0 | No |
 | 3 | 13.43 seconds | 11/11 | Yes | `3fe2dab24443` · four files | `not_requested` | 0 | No |
 
-All three terminal screens also showed `✓ VERIFIED`, `3 VALID` evidence references, eight command facts, `✓ ABSENT`, `4 EXACT`, and `LOCKED · NOT REQUESTED`. The 270-word narration is allocated 175 seconds, so the storyboard itself—not only the fast automated UI execution—fits the three-minute limit with five seconds of margin.
+All three terminal screens also showed `✓ VERIFIED`, `3 VALID` evidence references, eight command facts, `✓ ABSENT`, `4 EXACT`, and `LOCKED · NOT REQUESTED`. The revised 254-word narration renders in 2:15.23, so the storyboard itself—not only the fast automated UI execution—fits the three-minute limit with more than 44 seconds of margin.
 
 ## Local review cut
 
-Issue #17 renders the approved narration and actual UI captures into an ignored local MP4 using native macOS tooling. The current review cut is 2:22.67 at 1280×720 with H.264 video and AAC narration. See [submission video assets](../submission/README.md) to reproduce it. It is not a public video until a human reviews and explicitly approves upload.
+Issue #17 renders concise narration and actual UI captures into an ignored local MP4 using native macOS tooling. The current 2:15.23 review cut uses a measured Reed narrator voice, with scanner facts, model interpretation, and approval boundaries written for speech instead of read like documentation. It is 1280×720 H.264 with one mono AAC narration track. See [submission video assets](../submission/README.md) to reproduce it. It is not a public video until a human reviews and explicitly approves upload.
