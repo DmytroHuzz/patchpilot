@@ -1,6 +1,6 @@
 Dependency alerts are easy. Proving impact, and shipping a safe fix, is not. PatchPilot turns one real alert into a controlled, evidence-backed patch.
 
-First, O. S. V. Scanner detects a high-severity advisory in J. S. O. N. five, version one point zero point one. The advisory and fix version are scanner facts—not model guesses.
+First, OSV Scanner detects a high-severity advisory in JSON five, version one point zero point one. The advisory and fix version are scanner facts—not model guesses.
 
 Next, PatchPilot traces the dependency to the exact import and parse call. GPT five point six interprets only that bounded evidence, with citations, confidence, unknowns, and clear next checks.
 

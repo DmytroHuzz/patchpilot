@@ -235,3 +235,14 @@
 - Switched the default local synthetic narrator from Samantha at 150 words per minute to Reed (English, United States) at 165 words per minute. The renderer still supports voice and rate overrides for comparison.
 - An OpenAI API credential was not configured in the repository environment, so no remote text-to-speech request was attempted and no credential was invented or exposed.
 - The revised local cut passed media verification at 2:15.23, 1280×720, H.264 video plus one mono AAC narration track, 16,614,367 bytes. SHA-256: `0f7ef6e076251ce2cc56ca52af80cc77244cd1956ae612af4dc2fc89cd601de2`.
+
+## 2026-07-18 — Issue 17 partial: synchronized neural narration
+
+- Acceptance criteria restated from human feedback: every spoken beat must match the visible slide; narration must sound substantially less robotic; the cut must remain under three minutes with exactly one final video and audio track; checks must pass; publication stays locked.
+- Root cause: the first two renderers used one continuous voice track and estimated slide weights. Even accurate copy could cross a visual boundary mid-thought, creating genuine dissonance.
+- Replaced weighted timing with nine independently measured narration clips mapped one-to-one to the nine slides. The renderer now derives every slide boundary from its matching clip duration and adds only short visual lead and tail pauses.
+- Scope change explicitly authorized by the user's review: added optional `edge-tts` 7.2.8 submission tooling and selected `en-US-AndrewMultilingualNeural`, described by its voice catalog as warm, confident, authentic, and honest. This improves the hackathon presentation without changing the product runtime or golden-path scope.
+- The default macOS-only fallback remains available. The neural path sends only public narration copy to the online speech service; repository evidence, code, and credentials remain local. Synthetic narration is disclosed in `submission/README.md`.
+- The default package installer stalled twice during its HTTPS connection and was stopped. The isolated ignored review environment was instead assembled from the exact PyPI wheels for `edge-tts` 7.2.8 and its dependencies; no project dependency or system package was added.
+- Removed letter-by-letter punctuation that the prior macOS voice needed for `OSV` and `JSON`; the neural narrator handles those terms naturally and shortened the final cut.
+- The synchronized neural cut passed media verification at 2:18.17, 1280×720, H.264 video plus one mono AAC track, 17,183,677 bytes, with all nine narration clips present. SHA-256: `96d64911f9fd05b69585d90cab5838a01c9afade7068bbcf5f2adf48581dd136`.

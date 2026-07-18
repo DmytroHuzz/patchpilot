@@ -8,7 +8,13 @@ struct Slide {
     let eyebrow: String
     let title: String
     let subtitle: String
-    let weight: Double
+}
+
+struct NarrationManifest: Decodable {
+    let provider: String
+    let voice: String
+    let rate: String
+    let clips: [String]
 }
 
 enum RenderError: Error, CustomStringConvertible {
@@ -23,7 +29,7 @@ enum RenderError: Error, CustomStringConvertible {
     var description: String {
         switch self {
         case .badArguments:
-            return "Usage: render-demo-video.swift <repository-root> <audio.aiff> <output.mp4>"
+            return "Usage: render-demo-video.swift <repository-root> <narration-manifest.json> <output.mp4>"
         case .missingAsset(let path):
             return "Missing render asset: \(path)"
         case .imageDecode(let path):
@@ -44,7 +50,9 @@ let width = 1280
 let height = 720
 let framesPerSecond: Int32 = 30
 let introSeconds = 1.0
-let outroSeconds = 2.0
+let interSlideLeadSeconds = 0.25
+let interSlideTailSeconds = 0.45
+let outroSeconds = 1.5
 
 func removeGeneratedFile(_ url: URL) throws {
     let manager = FileManager.default
@@ -148,34 +156,51 @@ struct PatchPilotVideoRenderer {
         }
 
         let root = CommandLine.arguments[1]
-        let audioURL = URL(fileURLWithPath: CommandLine.arguments[2])
+        let manifestURL = URL(fileURLWithPath: CommandLine.arguments[2])
         let outputURL = URL(fileURLWithPath: CommandLine.arguments[3])
         let silentURL = outputURL.deletingLastPathComponent().appendingPathComponent("patchpilot-demo-silent.mov")
 
         let slides = [
-            Slide(path: "\(root)/submission/video-frames/00-ready.jpg", eyebrow: "PatchPilot", title: "Facts first. Judgment second.", subtitle: "One alert becomes a human-reviewed, evidence-backed fix.", weight: 25),
-            Slide(path: "\(root)/submission/video-frames/01-detect.jpg", eyebrow: "01 · Detect", title: "A real OSV finding", subtitle: "json5 1.0.1 · GHSA-9c47-m6qq-7p4h · deterministic scanner facts", weight: 30),
-            Slide(path: "\(root)/docs/assets/patchpilot-investigation.jpg", eyebrow: "02 · Investigate", title: "Repository evidence, then interpretation", subtitle: "Exact lines and uncertainty stay visible beside GPT-5.6 output.", weight: 31),
-            Slide(path: "\(root)/submission/video-frames/04-approved.jpg", eyebrow: "03 · Approve", title: "No write before the exact plan", subtitle: "Version, four files, commands, test, risks, and rollback are approval-bound.", weight: 31),
-            Slide(path: "\(root)/submission/video-frames/05-isolated.jpg", eyebrow: "04 · Isolate", title: "Clean source. Separate runway.", subtitle: "A dedicated patchpilot/run-* worktree contains every write.", weight: 33),
-            Slide(path: "\(root)/submission/video-frames/06-patch.jpg", eyebrow: "05–07 · Patch and test", title: "Small diff. Benign regression.", subtitle: "Dependency update, one bounded repair, one safe targeted test.", weight: 44),
-            Slide(path: "\(root)/submission/video-frames/08-report.jpg", eyebrow: "08 · Verify and rescan", title: "Before. After. Gone.", subtitle: "Eight command facts pass; the selected advisory is absent.", weight: 29),
-            Slide(path: "\(root)/submission/video-frames/09-handoff.jpg", eyebrow: "09 · Report", title: "Facts. Judgment. Approval. Unknowns.", subtitle: "Markdown and JSON preserve the complete accepted evidence chain.", weight: 24),
-            Slide(path: "\(root)/docs/assets/patchpilot-handoff.jpg", eyebrow: "10 · Handoff", title: "Committed locally. Publication locked.", subtitle: "Exactly four files; no push, pull request, or merge command ran.", weight: 27),
+            Slide(path: "\(root)/submission/video-frames/00-ready.jpg", eyebrow: "PatchPilot", title: "Facts first. Judgment second.", subtitle: "One alert becomes a human-reviewed, evidence-backed fix."),
+            Slide(path: "\(root)/submission/video-frames/01-detect.jpg", eyebrow: "01 · Detect", title: "A real OSV finding", subtitle: "json5 1.0.1 · GHSA-9c47-m6qq-7p4h · deterministic scanner facts"),
+            Slide(path: "\(root)/docs/assets/patchpilot-investigation.jpg", eyebrow: "02 · Investigate", title: "Repository evidence, then interpretation", subtitle: "Exact lines and uncertainty stay visible beside GPT-5.6 output."),
+            Slide(path: "\(root)/submission/video-frames/04-approved.jpg", eyebrow: "03 · Approve", title: "No write before the exact plan", subtitle: "Version, four files, commands, test, risks, and rollback are approval-bound."),
+            Slide(path: "\(root)/submission/video-frames/05-isolated.jpg", eyebrow: "04 · Isolate", title: "Clean source. Separate runway.", subtitle: "A dedicated patchpilot/run-* worktree contains every write."),
+            Slide(path: "\(root)/submission/video-frames/06-patch.jpg", eyebrow: "05–07 · Patch and test", title: "Small diff. Benign regression.", subtitle: "Dependency update, one bounded repair, one safe targeted test."),
+            Slide(path: "\(root)/submission/video-frames/08-report.jpg", eyebrow: "08 · Verify and rescan", title: "Before. After. Gone.", subtitle: "Eight command facts pass; the selected advisory is absent."),
+            Slide(path: "\(root)/submission/video-frames/09-handoff.jpg", eyebrow: "09 · Report", title: "Facts. Judgment. Approval. Unknowns.", subtitle: "Markdown and JSON preserve the complete accepted evidence chain."),
+            Slide(path: "\(root)/docs/assets/patchpilot-handoff.jpg", eyebrow: "10 · Handoff", title: "Committed locally. Publication locked.", subtitle: "Exactly four files; no push, pull request, or merge command ran."),
         ]
 
-        guard FileManager.default.fileExists(atPath: audioURL.path) else {
-            throw RenderError.missingAsset(audioURL.path)
+        guard FileManager.default.fileExists(atPath: manifestURL.path) else {
+            throw RenderError.missingAsset(manifestURL.path)
         }
+        let manifest = try JSONDecoder().decode(NarrationManifest.self, from: Data(contentsOf: manifestURL))
+        guard manifest.clips.count == slides.count else {
+            throw RenderError.missingTrack("one narration clip per slide")
+        }
+
+        let narrationDirectory = manifestURL.deletingLastPathComponent()
+        var clipAssets: [AVURLAsset] = []
+        var clipTracks: [AVAssetTrack] = []
+        var clipDurations: [CMTime] = []
+        for clip in manifest.clips {
+            let clipURL = narrationDirectory.appendingPathComponent(clip)
+            guard FileManager.default.fileExists(atPath: clipURL.path) else {
+                throw RenderError.missingAsset(clipURL.path)
+            }
+            let asset = AVURLAsset(url: clipURL)
+            let duration = try await asset.load(.duration)
+            guard let track = try await asset.loadTracks(withMediaType: .audio).first else {
+                throw RenderError.missingTrack("audio in \(clip)")
+            }
+            clipAssets.append(asset)
+            clipTracks.append(track)
+            clipDurations.append(duration)
+        }
+
         try removeGeneratedFile(silentURL)
         try removeGeneratedFile(outputURL)
-
-        let audioAsset = AVURLAsset(url: audioURL)
-        let audioDuration = try await audioAsset.load(.duration)
-        let narrationSeconds = CMTimeGetSeconds(audioDuration)
-        guard narrationSeconds.isFinite, narrationSeconds > 0 else {
-            throw RenderError.missingTrack("audio")
-        }
 
         let writer = try AVAssetWriter(outputURL: silentURL, fileType: .mov)
         let videoSettings: [String: Any] = [
@@ -206,12 +231,13 @@ struct PatchPilotVideoRenderer {
         }
         writer.startSession(atSourceTime: .zero)
 
-        let totalWeight = slides.reduce(0) { $0 + $1.weight }
         var frameIndex: Int64 = 0
+        var clipStartSeconds: [Double] = []
         for (index, slide) in slides.enumerated() {
-            var seconds = narrationSeconds * slide.weight / totalWeight
-            if index == 0 { seconds += introSeconds }
-            if index == slides.count - 1 { seconds += outroSeconds }
+            let leadSeconds = index == 0 ? introSeconds : interSlideLeadSeconds
+            let tailSeconds = index == slides.count - 1 ? outroSeconds : interSlideTailSeconds
+            clipStartSeconds.append(Double(frameIndex) / Double(framesPerSecond) + leadSeconds)
+            let seconds = leadSeconds + CMTimeGetSeconds(clipDurations[index]) + tailSeconds
             let frameCount = max(1, Int((seconds * Double(framesPerSecond)).rounded()))
             let buffer = try makePixelBuffer(from: captionedImage(slide: slide))
             for _ in 0..<frameCount {
@@ -237,10 +263,6 @@ struct PatchPilotVideoRenderer {
         guard let sourceVideoTrack = try await videoAsset.loadTracks(withMediaType: .video).first else {
             throw RenderError.missingTrack("video")
         }
-        guard let sourceAudioTrack = try await audioAsset.loadTracks(withMediaType: .audio).first else {
-            throw RenderError.missingTrack("audio")
-        }
-
         let composition = AVMutableComposition()
         guard let compositionVideo = composition.addMutableTrack(
             withMediaType: .video,
@@ -259,11 +281,13 @@ struct PatchPilotVideoRenderer {
             of: sourceVideoTrack,
             at: .zero
         )
-        try compositionAudio.insertTimeRange(
-            CMTimeRange(start: .zero, duration: audioDuration),
-            of: sourceAudioTrack,
-            at: CMTime(seconds: introSeconds, preferredTimescale: 600)
-        )
+        for index in clipTracks.indices {
+            try compositionAudio.insertTimeRange(
+                CMTimeRange(start: .zero, duration: clipDurations[index]),
+                of: clipTracks[index],
+                at: CMTime(seconds: clipStartSeconds[index], preferredTimescale: 600)
+            )
+        }
 
         guard let exporter = AVAssetExportSession(asset: composition, presetName: AVAssetExportPresetHighestQuality) else {
             throw RenderError.export("could not create export session")
@@ -276,6 +300,9 @@ struct PatchPilotVideoRenderer {
         let finalVideoTracks = try await finalAsset.loadTracks(withMediaType: .video)
         let finalAudioTracks = try await finalAsset.loadTracks(withMediaType: .audio)
         print("duration_seconds=\(String(format: "%.2f", CMTimeGetSeconds(finalDuration)))")
+        print("narration_provider=\(manifest.provider)")
+        print("narration_voice=\(manifest.voice)")
+        print("narration_clips=\(manifest.clips.count)")
         print("video_tracks=\(finalVideoTracks.count)")
         print("audio_tracks=\(finalAudioTracks.count)")
         print("output=\(outputURL.path)")

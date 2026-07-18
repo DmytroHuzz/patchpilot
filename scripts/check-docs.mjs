@@ -107,6 +107,7 @@ for (const screenshot of ["docs/assets/patchpilot-investigation.jpg", "docs/asse
 
 for (const videoSource of [
   "submission/video-narration.txt",
+  "scripts/generate-demo-narration.mjs",
   "scripts/render-demo-video.sh",
   "scripts/render-demo-video.swift",
 ]) {
