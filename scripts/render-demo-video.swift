@@ -162,7 +162,7 @@ struct PatchPilotVideoRenderer {
 
         let slides = [
             Slide(path: "\(root)/submission/video-frames/00-ready.jpg", eyebrow: "PatchPilot", title: "Facts first. Judgment second.", subtitle: "One alert becomes a human-reviewed, evidence-backed fix."),
-            Slide(path: "\(root)/submission/video-frames/01-detect.jpg", eyebrow: "01 · Detect", title: "A real OSV finding", subtitle: "json5 1.0.1 · GHSA-9c47-m6qq-7p4h · deterministic scanner facts"),
+            Slide(path: "\(root)/submission/video-frames/02-investigate.jpg", eyebrow: "01 · Detect", title: "A real OSV finding", subtitle: "json5 1.0.1 · GHSA-9c47-m6qq-7p4h · deterministic scanner facts"),
             Slide(path: "\(root)/docs/assets/patchpilot-investigation.jpg", eyebrow: "02 · Investigate", title: "Repository evidence, then interpretation", subtitle: "Exact lines and uncertainty stay visible beside GPT-5.6 output."),
             Slide(path: "\(root)/submission/video-frames/04-approved.jpg", eyebrow: "03 · Approve", title: "No write before the exact plan", subtitle: "Version, four files, commands, test, risks, and rollback are approval-bound."),
             Slide(path: "\(root)/submission/video-frames/05-isolated.jpg", eyebrow: "04 · Isolate", title: "Clean source. Separate runway.", subtitle: "A dedicated patchpilot/run-* worktree contains every write."),

@@ -246,3 +246,10 @@
 - The default package installer stalled twice during its HTTPS connection and was stopped. The isolated ignored review environment was instead assembled from the exact PyPI wheels for `edge-tts` 7.2.8 and its dependencies; no project dependency or system package was added.
 - Removed letter-by-letter punctuation that the prior macOS voice needed for `OSV` and `JSON`; the neural narrator handles those terms naturally and shortened the final cut.
 - The synchronized neural cut passed media verification at 2:18.17, 1280×720, H.264 video plus one mono AAC track, 17,183,677 bytes, with all nine narration clips present. SHA-256: `96d64911f9fd05b69585d90cab5838a01c9afade7068bbcf5f2adf48581dd136`.
+
+## 2026-07-18 — Issue 17 partial: detect-frame correction
+
+- Human review found that the detect narration still displayed the initial ready-to-scan screen. Inspection confirmed `01-detect.jpg` captured the result card below the viewport fold, leaving the ready screen dominant.
+- Remapped the detect slide to `02-investigate.jpg`, whose viewport centers the actual deterministic finding: advisory title, severity, package, installed version, advisory ID, fixed versions, affected range, and OSV-Scanner attribution.
+- Narration, timing, product behavior, and publication lock are unchanged. Scope expansions: none.
+- The corrected cut passed media verification at 2:18.17, 1280×720, H.264 video plus one mono AAC track, 16,934,512 bytes. SHA-256: `5a605d11dc0d927ac15b54be3f36b520dcac202e5da61648ab054f282cb46862`.
