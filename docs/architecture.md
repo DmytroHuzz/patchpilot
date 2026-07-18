@@ -102,3 +102,12 @@ OSV and command output are deterministic facts. There is no model call or interp
 - The report contains the original finding, cited evidence, affectedness assessment, approval, approved plan, exact dependency/source/test diffs, changed files, eight bounded command facts, normalized rescan, remaining uncertainty, and final status.
 - Markdown and JSON are written with owner-only permissions under ignored `runs/audit/` paths. Returned paths are repository-relative; the report excludes absolute local paths. Session-bound `GET` routes serve each artifact as a no-store attachment.
 - Reporting is deterministic composition only. It does not make a new model call, mutate the source or isolated patch, commit, push, publish, certify compliance, or claim that the repository is secure.
+
+## Implemented M4 Git handoff boundary
+
+- `POST /api/demo/github-handoff` accepts only the active verified report and matching isolated run. Plan/run identity, human approval, verified status, and selected-advisory absence must all agree.
+- Before staging, the executor canonically revalidates the source Git root, isolated worktree and repository, exact `patchpilot/run-*` branch, unchanged baseline HEAD, clean source checkout, and exactly four approved changed files.
+- Git stages only `package-lock.json`, `package.json`, `src/theme.js`, and `test/theme.test.js`. Hooks and signing are disabled for the deterministic local commit, which uses the fixed clear message `fix: remediate GHSA-9c47-m6qq-7p4h in json5`.
+- After commit, the executor requires a direct parent relationship to the verified baseline, the exact four-file commit, the same branch, a clean isolated worktree, and a still-clean source checkout.
+- Draft-PR copy deterministically summarizes the dependency change, approval, eight command facts, normalized rescan, model provenance, Codex contribution, remaining limitations, and repository-relative report artifacts. It excludes absolute local paths.
+- The bundled repository has no publication remote. The returned state is explicitly `not_requested`, requires separate approval, and runs no push, pull-request, or merge command. An owner-only handoff audit is written under ignored `runs/audit/` storage.

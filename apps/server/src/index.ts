@@ -6,6 +6,7 @@ import {
   CompatibilityRepairRequestSchema,
   DependencyUpdateRequestSchema,
   EvidenceReportRequestSchema,
+  GitHandoffRequestSchema,
   IsolationRequestSchema,
   RemediationDecisionRequestSchema,
   TargetedTestRequestSchema,
@@ -22,6 +23,7 @@ import { generateTargetedRegressionTest, TargetedTestStore } from "./remediation
 import { scanRepository } from "./scanning/osvScanner.js";
 import { runBaselineAndPostPatchVerification, VerificationStore } from "./verification/runVerification.js";
 import { EvidenceReportStore, generateEvidenceReport } from "./reporting/generateEvidenceReport.js";
+import { createGitHandoff, GitHandoffStore } from "./github/createGitHandoff.js";
 
 export const serviceName = "PatchPilot orchestrator";
 const root = process.cwd();
@@ -35,6 +37,7 @@ const compatibilityRepairStore = new CompatibilityRepairStore();
 const targetedTestStore = new TargetedTestStore();
 const verificationStore = new VerificationStore();
 const evidenceReportStore = new EvidenceReportStore();
+const gitHandoffStore = new GitHandoffStore();
 let latestInvestigation: InvestigationResult | undefined;
 
 const contentTypes: Record<string, string> = {
@@ -322,6 +325,37 @@ const server = createServer(async (request, response) => {
     return;
   }
 
+  if (request.method === "POST" && request.url === "/api/demo/github-handoff") {
+    try {
+      const handoffRequest = GitHandoffRequestSchema.parse(await readJsonBody(request));
+      const existing = gitHandoffStore.getByRun(handoffRequest.runId);
+      if (existing) {
+        if (existing.planId !== handoffRequest.planId) throw new Error("Git handoff does not match the requested approved plan");
+        response.writeHead(200, { "content-type": "application/json" });
+        response.end(JSON.stringify(existing));
+        return;
+      }
+      const evidenceReport = evidenceReportStore.getByRun(handoffRequest.runId);
+      const isolationRun = isolationRunStore.getById(handoffRequest.runId);
+      if (!evidenceReport || !isolationRun || evidenceReport.planId !== handoffRequest.planId || isolationRun.planId !== handoffRequest.planId) {
+        throw new Error("Verified reported isolation run is unknown, expired, or does not match the approved plan");
+      }
+      const result = await createGitHandoff({
+        evidenceReport,
+        isolationRun,
+        boundaryRoot: root,
+        resultRoot: path.join(root, "runs/audit"),
+      });
+      const stored = gitHandoffStore.register(result);
+      response.writeHead(200, { "content-type": "application/json" });
+      response.end(JSON.stringify(stored));
+    } catch (error) {
+      response.writeHead(400, { "content-type": "application/json" });
+      response.end(JSON.stringify({ error: error instanceof Error ? error.message : "Git handoff failed" }));
+    }
+    return;
+  }
+
   const reportDownload = request.method === "GET"
     ? request.url?.match(/^\/api\/demo\/report\/(run-[0-9a-f-]{36})\.(md|json)$/)
     : null;
@@ -361,5 +395,5 @@ const server = createServer(async (request, response) => {
 });
 
 server.listen(port, "127.0.0.1", () => {
-  console.log(`PatchPilot Milestone 3 evidence reporting: http://127.0.0.1:${port}`);
+  console.log(`PatchPilot Milestone 4 local Git handoff: http://127.0.0.1:${port}`);
 });

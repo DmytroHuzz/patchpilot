@@ -12,4 +12,4 @@
 - Compatibility repair is limited to the golden `parseUserTheme` function and a syntax-only probe. It cannot diagnose arbitrary upgrade breakage and stops after two failed attempts.
 - Test generation is limited to one benign allowlist regression in the bundled test file. It does not generate exploit payloads or general test suites.
 - Verification is limited to the bundled npm baseline, one approved isolated worktree, fixed install/test/build commands, and a lockfile-scoped OSV rescan of the selected advisory.
-- The current flow stops after the downloadable Markdown/JSON evidence report. Patch commit, automatic push, PR creation, deployment, and merge remain later or explicitly excluded steps.
+- The current flow creates a local commit and draft-PR copy only inside the isolated demo branch. The bundled repository has no publication remote; push and draft-PR creation require separate explicit approval and target configuration. Automatic push, deployment, and merge are excluded.

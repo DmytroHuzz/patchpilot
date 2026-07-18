@@ -804,3 +804,55 @@ export const EvidenceReportRequestSchema = z.object({
 }).strict();
 
 export type EvidenceReportRequest = z.infer<typeof EvidenceReportRequestSchema>;
+
+export const GitHandoffResultSchema = z.object({
+  runId: z.string().regex(/^run-[0-9a-f-]{36}$/),
+  planId: z.string().regex(/^plan-[a-f0-9]{64}$/),
+  status: z.literal("local_commit_ready"),
+  commit: z.object({
+    sha: z.string().regex(/^[a-f0-9]{40,64}$/),
+    parent: z.string().regex(/^[a-f0-9]{40,64}$/),
+    branchName: z.string().regex(/^patchpilot\/run-[0-9a-f-]{36}$/),
+    message: z.literal("fix: remediate GHSA-9c47-m6qq-7p4h in json5"),
+    changedFiles: z.tuple([
+      z.literal("package-lock.json"),
+      z.literal("package.json"),
+      z.literal("src/theme.js"),
+      z.literal("test/theme.test.js"),
+    ]),
+  }).strict(),
+  pullRequestDraft: z.object({
+    title: z.literal("fix: remediate GHSA-9c47-m6qq-7p4h in json5"),
+    body: z.string().min(1).max(64 * 1024),
+    baseBranch: z.string().min(1).refine((branch) => branch !== "DETACHED", "Pull-request copy requires a named base branch"),
+    headBranch: z.string().regex(/^patchpilot\/run-[0-9a-f-]{36}$/),
+    draft: z.literal(true),
+  }).strict(),
+  remotePublication: z.object({
+    status: z.literal("not_requested"),
+    requiresExplicitApproval: z.literal(true),
+    reason: z.literal("The bundled demo has no publication remote. Push and draft PR creation require a separate explicit approval and configured target."),
+  }).strict(),
+  sourceCheckoutClean: z.literal(true),
+  resultLogPath: z.string().regex(/^runs\/audit\/run-[0-9a-f-]{36}-github-handoff\.json$/),
+  completedAt: z.string().datetime(),
+}).strict().superRefine((result, context) => {
+  if (result.commit.branchName !== `patchpilot/${result.runId}` || result.commit.branchName !== result.pullRequestDraft.headBranch) {
+    context.addIssue({ code: z.ZodIssueCode.custom, message: "Commit and pull-request copy must use the same local branch" });
+  }
+  if (result.resultLogPath !== `runs/audit/${result.runId}-github-handoff.json`) {
+    context.addIssue({ code: z.ZodIssueCode.custom, message: "Git handoff audit path must derive from the run ID" });
+  }
+  if (result.pullRequestDraft.body.includes("/Users/") || result.pullRequestDraft.body.includes("file://")) {
+    context.addIssue({ code: z.ZodIssueCode.custom, message: "Pull-request copy cannot expose absolute local paths" });
+  }
+});
+
+export type GitHandoffResult = z.infer<typeof GitHandoffResultSchema>;
+
+export const GitHandoffRequestSchema = z.object({
+  planId: z.string().regex(/^plan-[a-f0-9]{64}$/),
+  runId: z.string().regex(/^run-[0-9a-f-]{36}$/),
+}).strict();
+
+export type GitHandoffRequest = z.infer<typeof GitHandoffRequestSchema>;

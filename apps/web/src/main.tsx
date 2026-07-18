@@ -4,6 +4,7 @@ import type {
   CompatibilityRepairResult,
   DependencyUpdateResult,
   EvidenceReportResult,
+  GitHandoffResult,
   IsolationRun,
   InvestigationResult,
   NormalizedScanResult,
@@ -13,7 +14,7 @@ import type {
 } from "@patchpilot/contracts";
 import "./styles.css";
 
-type Status = "ready" | "scanning" | "investigating" | "planning" | "deciding" | "isolating" | "updating" | "repairing" | "testing" | "verifying" | "reporting" | "error";
+type Status = "ready" | "scanning" | "investigating" | "planning" | "deciding" | "isolating" | "updating" | "repairing" | "testing" | "verifying" | "reporting" | "handing_off" | "error";
 
 function sentenceCase(value: string): string {
   return value.replaceAll("_", " ");
@@ -29,7 +30,9 @@ function App() {
   const [targetedTest, setTargetedTest] = useState<TargetedTestResult>();
   const [verification, setVerification] = useState<VerificationResult>();
   const [evidenceReport, setEvidenceReport] = useState<EvidenceReportResult>();
+  const [gitHandoff, setGitHandoff] = useState<GitHandoffResult>();
   const [copyLabel, setCopyLabel] = useState("Copy Markdown");
+  const [prCopyLabel, setPrCopyLabel] = useState("Copy PR body");
   const [status, setStatus] = useState<Status>("ready");
   const [error, setError] = useState("");
 
@@ -57,6 +60,7 @@ function App() {
     setTargetedTest(undefined);
     setVerification(undefined);
     setEvidenceReport(undefined);
+    setGitHandoff(undefined);
     try {
       setResult(await post<NormalizedScanResult>("/api/demo/scan"));
       setStatus("ready");
@@ -76,6 +80,7 @@ function App() {
     setTargetedTest(undefined);
     setVerification(undefined);
     setEvidenceReport(undefined);
+    setGitHandoff(undefined);
     try {
       setInvestigation(await post<InvestigationResult>("/api/demo/investigate"));
       setStatus("ready");
@@ -179,6 +184,7 @@ function App() {
     setStatus("verifying");
     setError("");
     setEvidenceReport(undefined);
+    setGitHandoff(undefined);
     try {
       setVerification(await post<VerificationResult>("/api/demo/verification", {
         planId: proposal.id,
@@ -214,6 +220,29 @@ function App() {
     window.setTimeout(() => setCopyLabel("Copy Markdown"), 1600);
   }
 
+  async function createLocalHandoff() {
+    if (!proposal || !isolation || !evidenceReport) return;
+    setStatus("handing_off");
+    setError("");
+    try {
+      setGitHandoff(await post<GitHandoffResult>("/api/demo/github-handoff", {
+        planId: proposal.id,
+        runId: isolation.id,
+      }));
+      setStatus("ready");
+    } catch (handoffError) {
+      setError(handoffError instanceof Error ? handoffError.message : "Git handoff failed");
+      setStatus("error");
+    }
+  }
+
+  async function copyPullRequestBody() {
+    if (!gitHandoff) return;
+    await navigator.clipboard.writeText(gitHandoff.pullRequestDraft.body);
+    setPrCopyLabel("Copied ✓");
+    window.setTimeout(() => setPrCopyLabel("Copy PR body"), 1600);
+  }
+
   const finding = result?.findings.find(({ id }) => id === "GHSA-9c47-m6qq-7p4h");
   const assessment = investigation?.assessmentRun.assessment;
   const assessmentSource = investigation?.assessmentRun.source;
@@ -223,8 +252,8 @@ function App() {
     <div className="shell">
       <header>
         <span className="mark">P</span><strong>PatchPilot</strong>
-        <nav><span className="active">01 Detect</span><span className={finding ? "active" : ""}>02 Investigate</span><span className={proposal ? "active" : ""}>03 Approve</span><span className={isolation ? "active" : ""}>04 Isolate</span><span className={dependencyUpdate ? "active" : ""}>05 Update</span><span className={compatibilityRepair ? "active" : ""}>06 Repair</span><span className={targetedTest ? "active" : ""}>07 Test</span><span className={verification ? "active" : ""}>08 Verify</span><span className={evidenceReport ? "active" : ""}>09 Report</span></nav>
-        <span className="stage">M3 / REPORT</span>
+        <nav><span className="active">01 Detect</span><span className={finding ? "active" : ""}>02 Investigate</span><span className={proposal ? "active" : ""}>03 Approve</span><span className={isolation ? "active" : ""}>04 Isolate</span><span className={dependencyUpdate ? "active" : ""}>05 Update</span><span className={compatibilityRepair ? "active" : ""}>06 Repair</span><span className={targetedTest ? "active" : ""}>07 Test</span><span className={verification ? "active" : ""}>08 Verify</span><span className={evidenceReport ? "active" : ""}>09 Report</span><span className={gitHandoff ? "active" : ""}>10 Handoff</span></nav>
+        <span className="stage">M4 / HANDOFF</span>
       </header>
       <main>
         <section className="hero">
@@ -692,8 +721,58 @@ function App() {
           <details className="report-preview"><summary>Preview Markdown evidence report</summary><pre>{evidenceReport.markdown}</pre></details>
           <div className="report-checkpoint">
             <div className="ready-icon">✓</div>
-            <div><strong>Golden path complete.</strong><span>Detect → investigate → approve → patch → test → rescan → report. Git publication remains a separate, optional step.</span></div>
+            <div><strong>Golden path complete.</strong><span>Detect → investigate → approve → patch → test → rescan → report. A local review handoff is available; remote publication remains separate.</span></div>
             <code>{evidenceReport.completedAt}</code>
+          </div>
+          {!gitHandoff && <div className="handoff-launch">
+            <div><strong>Evidence accepted for local handoff.</strong><span>Commit exactly the verified four-file patch and prepare accurate draft-PR copy. This does not push or open a pull request.</span></div>
+            <button onClick={createLocalHandoff} disabled={status === "handing_off"}>
+              {status === "handing_off" ? "Creating verified local commit…" : "Create local commit + PR copy"}<span>→</span>
+            </button>
+          </div>}
+          {error && <div className="decision-error">{error}</div>}
+        </section>}
+
+        {gitHandoff && <section className="git-handoff" aria-live="polite">
+          <div className="handoff-title">
+            <div><p className="eyebrow">10 · REVIEW-READY GIT HANDOFF</p><h2>Committed locally. Publication locked.</h2></div>
+            <div className="handoff-badge"><span>LOCAL BRANCH</span><strong>✓ COMMIT READY</strong></div>
+          </div>
+
+          <div className="handoff-facts">
+            <div><span>BRANCH</span><code>{gitHandoff.commit.branchName}</code></div>
+            <div><span>COMMIT</span><code>{gitHandoff.commit.sha.slice(0, 12)}</code></div>
+            <div><span>FILES</span><strong>{gitHandoff.commit.changedFiles.length} EXACT</strong></div>
+            <div><span>REMOTE</span><strong className="locked">LOCKED · NOT REQUESTED</strong></div>
+          </div>
+
+          <div className="handoff-grid">
+            <article>
+              <p className="panel-label"><span>01</span> LOCAL COMMIT</p>
+              <strong className="commit-message">{gitHandoff.commit.message}</strong>
+              <dl>
+                <div><dt>Parent</dt><dd><code>{gitHandoff.commit.parent.slice(0, 12)}</code></dd></div>
+                <div><dt>Source checkout</dt><dd>clean</dd></div>
+                <div><dt>Audit</dt><dd><code>{gitHandoff.resultLogPath}</code></dd></div>
+              </dl>
+              <div className="changed-file-list">{gitHandoff.commit.changedFiles.map((file) => <code key={file}>◇ {file}</code>)}</div>
+            </article>
+            <article className="pr-copy-card">
+              <p className="panel-label"><span>02</span> DRAFT PR COPY</p>
+              <strong>{gitHandoff.pullRequestDraft.title}</strong>
+              <pre>{gitHandoff.pullRequestDraft.body}</pre>
+              <button className="secondary" onClick={copyPullRequestBody}>{prCopyLabel}</button>
+            </article>
+          </div>
+
+          <div className="publication-lock">
+            <span>⌁</span>
+            <div><strong>Remote publication requires a new explicit approval.</strong><p>{gitHandoff.remotePublication.reason} No push, pull request, or merge command ran.</p></div>
+          </div>
+          <div className="handoff-checkpoint">
+            <div className="ready-icon">✓</div>
+            <div><strong>Review-ready local handoff complete.</strong><span>The verified patch is committed and its draft-PR title, evidence, tests, model contribution, and limitations are ready for a maintainer.</span></div>
+            <code>{gitHandoff.completedAt}</code>
           </div>
         </section>}
       </main>

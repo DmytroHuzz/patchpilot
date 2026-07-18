@@ -8,5 +8,6 @@
 4. Create the isolated workspace, apply the exact dependency update, repair the one source function, and add the one benign regression test.
 5. Run full verification and show the eight command facts, clean source checkout, zero normalized findings, and selected advisory absence.
 6. Generate the evidence report. End on the final status, facts/interpretation/uncertainty split, repository-relative artifact paths, and Markdown/JSON download controls.
+7. Create the local commit and PR copy. Show the exact branch, SHA, message, four files, PR evidence/limitations, and the explicit remote-publication lock.
 
-Reset with `./demo/reset-demo.sh` before each take. Git publication is an optional later handoff and is not part of this golden path.
+Reset with `./demo/reset-demo.sh` before each take. The local commit is the handoff endpoint; remote push and draft-PR creation require separate explicit approval and a configured target.
