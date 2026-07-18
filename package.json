@@ -13,6 +13,7 @@
     "dev": "npm run dev --workspace @patchpilot/web",
     "evidence:demo": "tsx apps/server/src/cli/collectDemoEvidence.ts",
     "investigate:demo": "tsx apps/server/src/cli/investigateDemo.ts",
+    "plan:demo": "tsx apps/server/src/cli/planDemo.ts",
     "scan:demo": "tsx apps/server/src/cli/scanDemo.ts",
     "test": "npm run test --workspaces --if-present",
     "typecheck": "npm run typecheck --workspaces --if-present"

@@ -78,3 +78,16 @@
 - Browser verification passed the scan → investigate click path. The three evidence items, likely-affected/medium interpretation, citations, unknowns, limitations, recommended checks, and fallback provenance rendered with no console errors.
 - No repository write occurs in the investigation path. No patch, approval, rescan-after-change, or report work began.
 - Scope expansions: none.
+
+## 2026-07-18 — Issue 7: remediation approval gate
+
+- Acceptance target: display the full target/files/risks/commands/tests plan before a decision, require explicit approval for the exact plan before future writes, and prove cancel leaves the repository unchanged.
+- Added a strict GPT‑5.6 `RemediationPlan` contract and a bounded context containing only the finding, assessment, package metadata, evidence-backed excerpts, test structure, allowed files, and allowed commands.
+- Added validation that rejects unsupplied target versions, unsafe or invented paths, non-allowlisted commands, and a combined strategy without an evidence-backed source file.
+- No `OPENAI_API_KEY` was available. The explicitly labeled cached plan targets `json5@1.0.2`, names four allowed files, includes a source-level input-boundary hardening step, lists compatibility risks, and proposes only four allowlisted commands.
+- Bound approval to a SHA-256 ID of the exact plan. Missing, awaiting, cancelled, tampered, and already-decided proposals fail closed; cancellation is terminal.
+- The first full check caught a duplicate variable name in the web request helper. Renamed the response value and retained the full typecheck as the regression check.
+- `npm run check` passed 29 tests and all builds. `npm run plan:demo` passed from live OSV detection through an `awaiting_approval` proposal.
+- Browser verification passed both decisions: cancel left the demo repository unchanged; approval recorded the exact plan and timestamp while explicitly stating no patch began. Browser logs were clean.
+- No worktree, dependency update, source edit, test generation, or other patch action was implemented.
+- Scope expansions: none.

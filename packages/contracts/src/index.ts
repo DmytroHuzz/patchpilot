@@ -97,6 +97,68 @@ export const AssessmentRunSchema = z.object({
 
 export type AssessmentRun = z.infer<typeof AssessmentRunSchema>;
 
+export const RemediationPlanSchema = z.object({
+  targetVersion: z.string().min(1),
+  strategy: z.enum([
+    "dependency_upgrade",
+    "dependency_upgrade_and_code_change",
+    "configuration_mitigation",
+  ]),
+  explanation: z.string().min(1),
+  expectedFiles: z.array(z.string().min(1)).min(1).max(12),
+  expectedCompatibilityRisks: z.array(z.string().min(1)).min(1).max(12),
+  proposedCommands: z.array(z.string().min(1)).min(1).max(12),
+  proposedTests: z.array(z.string().min(1)).min(1).max(12),
+  requiresHumanApproval: z.literal(true),
+}).strict();
+
+export type RemediationPlan = z.infer<typeof RemediationPlanSchema>;
+
+export const RemediationPlanRunSchema = z.object({
+  model: z.literal("gpt-5.6"),
+  source: z.enum(["openai", "cached-demo"]),
+  plan: RemediationPlanSchema,
+}).strict();
+
+export type RemediationPlanRun = z.infer<typeof RemediationPlanRunSchema>;
+
+export const ApprovalRecordSchema = z.object({
+  planId: z.string().regex(/^plan-[a-f0-9]{64}$/),
+  decision: z.enum(["approved", "cancelled"]),
+  recordedAt: z.string().datetime(),
+}).strict();
+
+export type ApprovalRecord = z.infer<typeof ApprovalRecordSchema>;
+
+export const RemediationProposalSchema = z.object({
+  id: z.string().regex(/^plan-[a-f0-9]{64}$/),
+  planRun: RemediationPlanRunSchema,
+  status: z.enum(["awaiting_approval", "approved", "cancelled"]),
+  approval: ApprovalRecordSchema.optional(),
+}).strict().superRefine((proposal, context) => {
+  if (proposal.status === "awaiting_approval" && proposal.approval !== undefined) {
+    context.addIssue({ code: z.ZodIssueCode.custom, message: "Awaiting proposals cannot have an approval record" });
+  }
+  if (proposal.status !== "awaiting_approval" && proposal.approval === undefined) {
+    context.addIssue({ code: z.ZodIssueCode.custom, message: "Decided proposals require an approval record" });
+  }
+  if (proposal.approval && proposal.approval.decision !== proposal.status) {
+    context.addIssue({ code: z.ZodIssueCode.custom, message: "Approval decision must match proposal status" });
+  }
+  if (proposal.approval && proposal.approval.planId !== proposal.id) {
+    context.addIssue({ code: z.ZodIssueCode.custom, message: "Approval record must reference the proposal" });
+  }
+});
+
+export type RemediationProposal = z.infer<typeof RemediationProposalSchema>;
+
+export const RemediationDecisionRequestSchema = z.object({
+  planId: z.string().regex(/^plan-[a-f0-9]{64}$/),
+  decision: z.enum(["approved", "cancelled"]),
+}).strict();
+
+export type RemediationDecisionRequest = z.infer<typeof RemediationDecisionRequestSchema>;
+
 export const NormalizedScanResultSchema = z.object({
   scanner: z.literal("osv-scanner"),
   scannerVersion: z.string().min(1),

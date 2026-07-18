@@ -1,5 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { AffectednessAssessmentSchema, NormalizedScanResultSchema, productName } from "./index.js";
+import {
+  AffectednessAssessmentSchema,
+  NormalizedScanResultSchema,
+  RemediationPlanSchema,
+  productName,
+} from "./index.js";
 
 describe("contracts package", () => {
   it("exports the product identity", () => {
@@ -23,5 +28,18 @@ describe("contracts package", () => {
     };
 
     expect(() => AffectednessAssessmentSchema.parse(assessment)).toThrow();
+  });
+
+  it("requires human approval in every remediation plan", () => {
+    expect(() => RemediationPlanSchema.parse({
+      targetVersion: "1.0.2",
+      strategy: "dependency_upgrade",
+      explanation: "Upgrade to the fixed release.",
+      expectedFiles: ["package.json"],
+      expectedCompatibilityRisks: ["Dependency behavior may change."],
+      proposedCommands: ["npm install json5@1.0.2 --save-exact"],
+      proposedTests: ["npm test"],
+      requiresHumanApproval: false,
+    })).toThrow();
   });
 });

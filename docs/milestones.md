@@ -33,7 +33,8 @@
 
 ## M3 — Patch and verification
 
-- [ ] Explicit approval and isolated Git flow work.
+- [x] Complete remediation plan and exact-plan approval/cancel gate work.
+- [ ] Isolated Git branch/worktree flow works.
 - [ ] Dependency and meaningful non-lockfile changes occur.
 - [ ] Targeted/full tests and build pass.
 - [ ] Selected finding disappears on rescan.

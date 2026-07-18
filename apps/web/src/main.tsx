@@ -1,9 +1,13 @@
 import React, { useState } from "react";
 import { createRoot } from "react-dom/client";
-import type { InvestigationResult, NormalizedScanResult } from "@patchpilot/contracts";
+import type {
+  InvestigationResult,
+  NormalizedScanResult,
+  RemediationProposal,
+} from "@patchpilot/contracts";
 import "./styles.css";
 
-type Status = "ready" | "scanning" | "investigating" | "error";
+type Status = "ready" | "scanning" | "investigating" | "planning" | "deciding" | "error";
 
 function sentenceCase(value: string): string {
   return value.replaceAll("_", " ");
@@ -12,20 +16,28 @@ function sentenceCase(value: string): string {
 function App() {
   const [result, setResult] = useState<NormalizedScanResult>();
   const [investigation, setInvestigation] = useState<InvestigationResult>();
+  const [proposal, setProposal] = useState<RemediationProposal>();
   const [status, setStatus] = useState<Status>("ready");
   const [error, setError] = useState("");
 
-  async function post<T>(url: string): Promise<T> {
-    const response = await fetch(url, { method: "POST" });
-    const body = await response.json();
-    if (!response.ok) throw new Error(body.error ?? "Request failed");
-    return body;
+  async function post<T>(url: string, requestBody?: unknown): Promise<T> {
+    const response = await fetch(url, {
+      method: "POST",
+      ...(requestBody === undefined ? {} : {
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify(requestBody),
+      }),
+    });
+    const responseBody = await response.json();
+    if (!response.ok) throw new Error(responseBody.error ?? "Request failed");
+    return responseBody;
   }
 
   async function scanDemo() {
     setStatus("scanning");
     setError("");
     setInvestigation(undefined);
+    setProposal(undefined);
     try {
       setResult(await post<NormalizedScanResult>("/api/demo/scan"));
       setStatus("ready");
@@ -38,6 +50,7 @@ function App() {
   async function investigateDemo() {
     setStatus("investigating");
     setError("");
+    setProposal(undefined);
     try {
       setInvestigation(await post<InvestigationResult>("/api/demo/investigate"));
       setStatus("ready");
@@ -47,16 +60,45 @@ function App() {
     }
   }
 
+  async function reviewRemediationPlan() {
+    setStatus("planning");
+    setError("");
+    try {
+      setProposal(await post<RemediationProposal>("/api/demo/remediation-plan"));
+      setStatus("ready");
+    } catch (planningError) {
+      setError(planningError instanceof Error ? planningError.message : "Planning failed");
+      setStatus("error");
+    }
+  }
+
+  async function recordDecision(decision: "approved" | "cancelled") {
+    if (!proposal) return;
+    setStatus("deciding");
+    setError("");
+    try {
+      setProposal(await post<RemediationProposal>("/api/demo/remediation-decision", {
+        planId: proposal.id,
+        decision,
+      }));
+      setStatus("ready");
+    } catch (decisionError) {
+      setError(decisionError instanceof Error ? decisionError.message : "Decision failed");
+      setStatus("error");
+    }
+  }
+
   const finding = result?.findings.find(({ id }) => id === "GHSA-9c47-m6qq-7p4h");
   const assessment = investigation?.assessmentRun.assessment;
   const assessmentSource = investigation?.assessmentRun.source;
+  const plan = proposal?.planRun.plan;
 
   return (
     <div className="shell">
       <header>
         <span className="mark">P</span><strong>PatchPilot</strong>
-        <nav><span className="active">01 Detect</span><span className={finding ? "active" : ""}>02 Investigate</span><span>03 Approve</span></nav>
-        <span className="stage">M2 / EVIDENCE-BOUND</span>
+        <nav><span className="active">01 Detect</span><span className={finding ? "active" : ""}>02 Investigate</span><span className={proposal ? "active" : ""}>03 Approve</span></nav>
+        <span className="stage">M3 / HUMAN GATE</span>
       </header>
       <main>
         <section className="hero">
@@ -70,7 +112,7 @@ function App() {
             <h2>patchpilot-golden-demo</h2>
             <p>Node.js · npm · direct dependency</p>
             <code>demo/vulnerable-node-app</code>
-            <button onClick={scanDemo} disabled={status === "scanning" || status === "investigating"}>
+            <button onClick={scanDemo} disabled={["scanning", "investigating", "planning", "deciding"].includes(status)}>
               {status === "scanning" ? "Scanning with OSV…" : "Run deterministic scan"}<span>→</span>
             </button>
             {error && <p className="error">{error}</p>}
@@ -155,6 +197,74 @@ function App() {
             <div><p className="panel-label"><span>→</span> NEXT CHECKS</p><ul>{assessment.recommendedNextChecks.map((item) => <li key={item}>{item}</li>)}</ul></div>
           </div>
           {assessmentSource === "cached-demo" && <div className="fixture-notice">No API key detected. Showing the checked-in GPT‑5.6 contract fixture; the same schema, citation, and uncertainty validators run in live mode.</div>}
+          <div className="plan-launch">
+            <div><strong>Investigation complete.</strong><span>Review every proposed file, command, test, and risk before granting permission.</span></div>
+            <button className="secondary" onClick={reviewRemediationPlan} disabled={status === "planning" || status === "deciding"}>
+              {status === "planning" ? "Building bounded plan…" : "Review remediation plan"}<span>→</span>
+            </button>
+          </div>
+        </section>}
+
+        {proposal && plan && <section className="remediation" aria-live="polite">
+          <div className="remediation-title">
+            <div><p className="eyebrow">03 · HUMAN APPROVAL GATE</p><h2>Review the exact change boundary.</h2></div>
+            <div className={`source-badge ${proposal.planRun.source === "openai" ? "live" : "cached"}`}>
+              <span>{proposal.planRun.source === "openai" ? "LIVE OPENAI" : "CACHED CONTRACT FIXTURE"}</span>
+              <strong>GPT‑5.6 · REMEDIATION PLAN</strong>
+            </div>
+          </div>
+
+          <div className="plan-summary">
+            <div><span>TARGET</span><strong>json5 {investigation?.finding.installedVersion} <em>→</em> {plan.targetVersion}</strong></div>
+            <div><span>STRATEGY</span><strong>{sentenceCase(plan.strategy)}</strong></div>
+            <div><span>WRITE STATE</span><strong className="locked">● LOCKED</strong></div>
+          </div>
+
+          <div className="plan-explanation">
+            <p className="panel-label"><span>i</span> PROPOSED APPROACH</p>
+            <p>{plan.explanation}</p>
+          </div>
+
+          <div className="plan-grid">
+            <article>
+              <p className="panel-label"><span>01</span> EXPECTED FILES</p>
+              <div className="plan-items files">{plan.expectedFiles.map((file) => <code key={file}>{file}</code>)}</div>
+            </article>
+            <article>
+              <p className="panel-label"><span>02</span> COMPATIBILITY RISKS</p>
+              <ul>{plan.expectedCompatibilityRisks.map((risk) => <li key={risk}>{risk}</li>)}</ul>
+            </article>
+            <article>
+              <p className="panel-label"><span>03</span> PLANNED COMMANDS</p>
+              <div className="plan-items commands">{plan.proposedCommands.map((command) => <code key={command}>$ {command}</code>)}</div>
+            </article>
+            <article>
+              <p className="panel-label"><span>04</span> VERIFICATION INTENT</p>
+              <ul>{plan.proposedTests.map((test) => <li key={test}>{test}</li>)}</ul>
+            </article>
+          </div>
+
+          <div className="approval-lock">
+            <div className="lock-icon">⌁</div>
+            <div><strong>No repository write has occurred.</strong><span>Approval is recorded against this exact plan ID. Any content change invalidates the gate.</span><code>{proposal.id}</code></div>
+          </div>
+
+          {proposal.status === "awaiting_approval" ? <div className="approval-actions">
+            <button className="cancel-button" onClick={() => recordDecision("cancelled")} disabled={status === "deciding"}>
+              Cancel · leave repository unchanged
+            </button>
+            <button className="approve-button" onClick={() => recordDecision("approved")} disabled={status === "deciding"}>
+              {status === "deciding" ? "Recording decision…" : "Approve this exact plan"}<span>→</span>
+            </button>
+          </div> : <div className={`decision-result ${proposal.status}`}>
+            <div><span>{proposal.status === "approved" ? "✓" : "×"}</span></div>
+            <div>
+              <strong>{proposal.status === "approved" ? "Approval recorded. Patch gate may proceed next." : "Plan cancelled. Repository remains unchanged."}</strong>
+              <p>{proposal.status === "approved" ? "No patch has started; isolated Git setup is the next separately reviewed issue." : "A cancelled decision cannot be converted into approval. Generate a new plan after restarting the demo."}</p>
+              <code>{proposal.approval?.recordedAt}</code>
+            </div>
+          </div>}
+          {error && <div className="decision-error">{error}</div>}
         </section>}
       </main>
     </div>

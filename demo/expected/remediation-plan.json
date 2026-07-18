@@ -1,0 +1,32 @@
+{
+  "model": "gpt-5.6",
+  "source": "cached-demo",
+  "plan": {
+    "targetVersion": "1.0.2",
+    "strategy": "dependency_upgrade_and_code_change",
+    "explanation": "Upgrade json5 to the fixed 1.x release, then copy only the supported theme fields from the parsed value into a fresh object at the input boundary. This keeps the change small while adding a meaningful source-level defense independent of downstream consumers.",
+    "expectedFiles": [
+      "package.json",
+      "package-lock.json",
+      "src/theme.js",
+      "test/theme.test.js"
+    ],
+    "expectedCompatibilityRisks": [
+      "Callers that rely on unrecognized theme fields will no longer receive those fields.",
+      "The fixed parser release may reject or normalize inputs differently from version 1.0.1."
+    ],
+    "proposedCommands": [
+      "npm install json5@1.0.2 --save-exact",
+      "npm run test",
+      "npm run build",
+      "osv-scanner scan source ."
+    ],
+    "proposedTests": [
+      "Run the existing npm test suite before and after the change.",
+      "Add a targeted test showing that unsupported input keys are not copied into the returned theme.",
+      "Run the configured build syntax checks.",
+      "Rescan and require GHSA-9c47-m6qq-7p4h to disappear."
+    ],
+    "requiresHumanApproval": true
+  }
+}

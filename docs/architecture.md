@@ -38,3 +38,12 @@ OSV and command output are deterministic facts. There is no model call or interp
 - Post-schema validation rejects invented or duplicate evidence IDs, absence evidence used to support affectedness, unsupported not-affected prose, and no-usage verdicts that contradict a deterministic call site.
 - If `OPENAI_API_KEY` is absent, the investigator loads an explicitly labeled `cached-demo` contract fixture and applies the same validators. It is never presented as a live model response.
 - `POST /api/demo/investigate` performs scan → advisory → evidence → assessment without repository writes. The UI separates deterministic facts, evidence, interpretation, uncertainty, and provenance.
+
+## Implemented M3 approval boundary
+
+- The remediation planner receives only the validated finding, affectedness assessment, package metadata, evidence-backed excerpts, test structure, and explicit file/command allowlists.
+- GPT‑5.6 returns a strict `RemediationPlan`; the cached fallback uses the same schema and is visibly labeled. Post-schema validation restricts the target to supplied fixed versions and every file/command to the input allowlist.
+- Every plan requires human approval and includes target version, strategy, explanation, expected files, compatibility risks, proposed commands, and verification intent.
+- A plan ID is the SHA-256 digest of the exact validated plan. Approval records bind a decision and timestamp to that ID; tampered, missing, awaiting, or cancelled proposals fail the reusable write gate.
+- Approval state is intentionally in-memory for the single demo session. Restarting the server clears it.
+- `POST /api/demo/remediation-plan` is read-only. `POST /api/demo/remediation-decision` records `approved` or `cancelled`; neither endpoint creates a worktree or modifies the target repository.
