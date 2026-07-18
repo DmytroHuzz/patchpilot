@@ -2,7 +2,7 @@
 
 PatchPilot investigates a known npm dependency vulnerability, proposes the smallest reviewable remediation, and proves the result with tests and a rescan.
 
-> Hackathon build in progress. The current implementation boundary is Milestone 1: a deterministic scan of the bundled demo repository.
+> Milestone 1 complete: the bundled repository resets cleanly, produces one real OSV finding, and displays its normalized deterministic facts. AI affectedness analysis has not started.
 
 ## Golden workflow
 
@@ -29,6 +29,22 @@ npm run build
 
 Milestone-specific setup and demo commands will be documented once their acceptance criteria pass.
 
+## Run the Milestone 1 demo
+
+Install the pinned OSV-Scanner 2.3.8 binary for macOS/Linux, verify the clean-reset scan, then launch the local UI:
+
+```bash
+./scripts/setup-osv-scanner.sh
+./scripts/verify-demo.sh
+npm run demo
+```
+
+Alternatively, `./demo/run-demo.sh` performs the fixture reset, install, baseline checks, scanner setup, and UI launch in one command.
+
+Open `http://127.0.0.1:4173` and choose **Run deterministic scan**. The expected result is `GHSA-9c47-m6qq-7p4h` in direct dependency `json5@1.0.1`.
+
+The setup script verifies the official release checksum. Set `OSV_SCANNER_PATH` to use an existing compatible scanner binary instead.
+
 ## Safety
 
 PatchPilot is an evidence and remediation aid. It does not prove that a project is secure or that a vulnerability is exploitable. Deterministic tool results, model-supported interpretation, and unresolved unknowns are shown separately.
@@ -36,4 +52,3 @@ PatchPilot is an evidence and remediation aid. It does not prove that a project 
 ## License
 
 MIT. OSV-Scanner is a separate Apache-2.0-licensed project and is not bundled in this repository.
-

@@ -12,14 +12,14 @@
 
 ## M1 — Deterministic scan
 
-- [ ] Safe real vulnerability selected and documented.
-- [ ] Bundled demo repository and safe reset script created.
-- [ ] OSV-Scanner setup and subprocess adapter implemented.
-- [ ] Scanner output normalized and schema validated.
-- [ ] Expected finding displayed in the web UI.
-- [ ] Clean-reset acceptance test passes.
+- [x] Safe real vulnerability selected and documented.
+- [x] Bundled demo repository and safe reset script created.
+- [x] OSV-Scanner setup and subprocess adapter implemented.
+- [x] Scanner output normalized and schema validated.
+- [x] Expected finding displayed in the web UI.
+- [x] Clean-reset acceptance test passes.
 
-**Gate:** do not begin M2 until every M1 item above passes.
+**Gate passed 2026-07-18:** M2 may begin only as a separate issue after this M1 result is committed.
 
 ## M2 — Investigation
 
@@ -43,4 +43,3 @@
 
 - [ ] Accessible repository, video, Devpost copy, built-with list, `/feedback` reference, and testing instructions complete.
 - [ ] Submission completed before 2026-07-21 20:00 Europe/Vienna internal freeze.
-

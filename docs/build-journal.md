@@ -18,3 +18,14 @@
 - Designed a tiny CLI that passes user-provided theme configuration to `JSON5.parse`; no exploit payload is stored or executed.
 - The later meaningful source change will validate and copy a narrow theme schema at the input boundary alongside the dependency update. This satisfies the existing golden-demo requirement and is not a scope expansion.
 - Scope expansions: none.
+
+## 2026-07-18 — Issue 3: OSV adapter, normalization, and findings UI
+
+- Acceptance target: reproducible scanner setup, bounded JSON subprocess, strict normalization, exact live finding, and visible findings screen.
+- Pinned official OSV-Scanner 2.3.8 binaries for supported macOS/Linux architectures and verified downloads against the release SHA-256 file.
+- Confirmed OSV-Scanner uses exit code 1 when findings exist; the adapter accepts it only with parseable JSON and treats other failures honestly.
+- Added Zod contracts, raw-field validation, normalized range/fix/reference extraction, and malformed-output tests.
+- Clean reset plus live scan returned exactly `GHSA-9c47-m6qq-7p4h` in direct dependency `json5@1.0.1`.
+- Verified the UI through the real browser click path: the expected heading and all deterministic fact fields rendered from the live endpoint.
+- Milestone 1 acceptance passed. No OpenAI API call, affectedness prompt, or AI analysis was added.
+- Scope expansions: none.

@@ -1,10 +1,21 @@
 name: Demo smoke
 on:
   workflow_dispatch:
+  push:
+    paths:
+      - "apps/**"
+      - "demo/**"
+      - "packages/contracts/**"
+      - "scripts/setup-osv-scanner.sh"
+      - "scripts/verify-demo.sh"
 jobs:
   milestone-1:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - run: echo "Enabled when the M1 clean-reset scanner acceptance test is committed."
-
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+      - run: ./scripts/verify-demo.sh
