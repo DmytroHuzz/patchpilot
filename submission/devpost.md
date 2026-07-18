@@ -58,6 +58,5 @@ Open `http://127.0.0.1:4173` and follow the 11 numbered buttons. No credentials 
 
 ## Final external answers
 
-- **Submitter Type:** pending user confirmation
-- **Country of Residence:** pending user confirmation
-
+- **Submitter Type:** Individual
+- **Country of Residence:** Austria
