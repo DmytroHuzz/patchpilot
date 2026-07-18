@@ -10,7 +10,7 @@ export function normalizeOsvOutput(raw: unknown, repositoryPath: string): Vulner
   return parsed.results.flatMap((result) => result.packages.flatMap((packageResult) => {
     if (packageResult.package.ecosystem.toLowerCase() !== "npm") return [];
 
-    const sourcePath = path.resolve(result.source.path);
+    const sourcePath = path.resolve(repositoryPath, result.source.path);
     const lockfilePath = path.relative(repositoryPath, sourcePath);
     const manifestPath = path.join(path.dirname(lockfilePath), "package.json");
 

@@ -8,10 +8,11 @@ import type {
   NormalizedScanResult,
   RemediationProposal,
   TargetedTestResult,
+  VerificationResult,
 } from "@patchpilot/contracts";
 import "./styles.css";
 
-type Status = "ready" | "scanning" | "investigating" | "planning" | "deciding" | "isolating" | "updating" | "repairing" | "testing" | "error";
+type Status = "ready" | "scanning" | "investigating" | "planning" | "deciding" | "isolating" | "updating" | "repairing" | "testing" | "verifying" | "error";
 
 function sentenceCase(value: string): string {
   return value.replaceAll("_", " ");
@@ -25,6 +26,7 @@ function App() {
   const [dependencyUpdate, setDependencyUpdate] = useState<DependencyUpdateResult>();
   const [compatibilityRepair, setCompatibilityRepair] = useState<CompatibilityRepairResult>();
   const [targetedTest, setTargetedTest] = useState<TargetedTestResult>();
+  const [verification, setVerification] = useState<VerificationResult>();
   const [status, setStatus] = useState<Status>("ready");
   const [error, setError] = useState("");
 
@@ -50,6 +52,7 @@ function App() {
     setDependencyUpdate(undefined);
     setCompatibilityRepair(undefined);
     setTargetedTest(undefined);
+    setVerification(undefined);
     try {
       setResult(await post<NormalizedScanResult>("/api/demo/scan"));
       setStatus("ready");
@@ -67,6 +70,7 @@ function App() {
     setDependencyUpdate(undefined);
     setCompatibilityRepair(undefined);
     setTargetedTest(undefined);
+    setVerification(undefined);
     try {
       setInvestigation(await post<InvestigationResult>("/api/demo/investigate"));
       setStatus("ready");
@@ -165,6 +169,22 @@ function App() {
     }
   }
 
+  async function runVerification() {
+    if (!proposal || !isolation || !targetedTest) return;
+    setStatus("verifying");
+    setError("");
+    try {
+      setVerification(await post<VerificationResult>("/api/demo/verification", {
+        planId: proposal.id,
+        runId: isolation.id,
+      }));
+      setStatus("ready");
+    } catch (verificationError) {
+      setError(verificationError instanceof Error ? verificationError.message : "Verification failed");
+      setStatus("error");
+    }
+  }
+
   const finding = result?.findings.find(({ id }) => id === "GHSA-9c47-m6qq-7p4h");
   const assessment = investigation?.assessmentRun.assessment;
   const assessmentSource = investigation?.assessmentRun.source;
@@ -174,8 +194,8 @@ function App() {
     <div className="shell">
       <header>
         <span className="mark">P</span><strong>PatchPilot</strong>
-        <nav><span className="active">01 Detect</span><span className={finding ? "active" : ""}>02 Investigate</span><span className={proposal ? "active" : ""}>03 Approve</span><span className={isolation ? "active" : ""}>04 Isolate</span><span className={dependencyUpdate ? "active" : ""}>05 Update</span><span className={compatibilityRepair ? "active" : ""}>06 Repair</span><span className={targetedTest ? "active" : ""}>07 Test</span></nav>
-        <span className="stage">M3 / TARGETED TEST</span>
+        <nav><span className="active">01 Detect</span><span className={finding ? "active" : ""}>02 Investigate</span><span className={proposal ? "active" : ""}>03 Approve</span><span className={isolation ? "active" : ""}>04 Isolate</span><span className={dependencyUpdate ? "active" : ""}>05 Update</span><span className={compatibilityRepair ? "active" : ""}>06 Repair</span><span className={targetedTest ? "active" : ""}>07 Test</span><span className={verification ? "active" : ""}>08 Verify</span></nav>
+        <span className="stage">M3 / VERIFICATION</span>
       </header>
       <main>
         <section className="hero">
@@ -189,7 +209,7 @@ function App() {
             <h2>patchpilot-golden-demo</h2>
             <p>Node.js · npm · direct dependency</p>
             <code>demo/vulnerable-node-app</code>
-            <button onClick={scanDemo} disabled={["scanning", "investigating", "planning", "deciding", "isolating", "updating", "repairing", "testing"].includes(status)}>
+            <button onClick={scanDemo} disabled={["scanning", "investigating", "planning", "deciding", "isolating", "updating", "repairing", "testing", "verifying"].includes(status)}>
               {status === "scanning" ? "Scanning with OSV…" : "Run deterministic scan"}<span>→</span>
             </button>
             {error && <p className="error">{error}</p>}
@@ -538,6 +558,54 @@ function App() {
             <div className="ready-icon">{targetedTest.status === "test_added_passed" ? "✓" : "×"}</div>
             <div><strong>{targetedTest.status === "test_added_passed" ? "Targeted regression checkpoint complete." : "Targeted test stopped safely."}</strong><span>{targetedTest.status === "test_added_passed" ? "The focused mitigation test passes and its diff is retained. Full tests, build, and rescan remain the next separate verification issue." : targetedTest.status === "test_failed_restored" ? "The focused command failed, so the generated test was restored and no passing claim is made." : "Generation stopped without a test write or command execution."}</span></div>
             <code>{targetedTest.completedAt}</code>
+          </div>
+          {targetedTest.status === "test_added_passed" && !verification && <div className="verification-launch">
+            <div><strong>Four-file checkpoint passed.</strong><span>Compare the vulnerable baseline with the approved patch, then rescan the selected advisory.</span></div>
+            <button onClick={runVerification} disabled={status === "verifying"}>
+              {status === "verifying" ? "Running verification sequence…" : "Run full verification"}<span>→</span>
+            </button>
+          </div>}
+          {error && <div className="decision-error">{error}</div>}
+        </section>}
+
+        {verification && <section className={`verification ${verification.status}`} aria-live="polite">
+          <div className="verification-title">
+            <div><p className="eyebrow">08 · DETERMINISTIC VERIFICATION</p><h2>Before. After. Gone.</h2></div>
+            <div className={`verification-badge ${verification.status}`}><span>GOLDEN-PATH FACTS</span><strong>{verification.status === "verified" ? "✓ VERIFIED" : "× STOPPED"}</strong></div>
+          </div>
+
+          <div className="verification-facts">
+            <div><span>BASELINE</span><strong className={verification.baseline.fullTestsPassed && verification.baseline.buildPassed ? "passed" : "failed"}>{verification.baseline.fullTestsPassed && verification.baseline.buildPassed ? "✓ PASS" : "× STOP"}</strong></div>
+            <div><span>POST-PATCH</span><strong className={verification.postPatch.fullTestsPassed && verification.postPatch.buildPassed ? "passed" : "failed"}>{verification.postPatch.fullTestsPassed && verification.postPatch.buildPassed ? "✓ PASS" : "× STOP"}</strong></div>
+            <div><span>SELECTED ADVISORY</span><strong className={verification.rescan && !verification.rescan.selectedAdvisoryPresent ? "passed" : "failed"}>{verification.rescan ? verification.rescan.selectedAdvisoryPresent ? "× PRESENT" : "✓ ABSENT" : "— NOT RUN"}</strong></div>
+            <div><span>SOURCE CHECKOUT</span><strong className="passed">✓ CLEAN</strong></div>
+          </div>
+
+          <div className="verification-grid">
+            <article>
+              <p className="panel-label"><span>01</span> COMMAND AUDIT</p>
+              <ol className="verification-commands">{verification.commands.map((command, index) => <li key={`${command.phase}-${command.kind}-${index}`}>
+                <span className={command.status === "passed" || command.status === "findings_present" ? "passed" : "failed"}>{command.status === "passed" ? "✓" : command.status === "findings_present" ? "!" : "×"}</span>
+                <div><div><strong>{sentenceCase(command.phase)} · {sentenceCase(command.kind)}</strong><small>EXIT {command.exitCode} · {command.durationMs} MS · {command.outputTruncated ? "TRUNCATED" : "COMPLETE"}</small></div><code>$ {command.command}</code><pre>{[command.stdoutSummary, command.stderrSummary].filter(Boolean).join("\n") || "Command completed without output."}</pre></div>
+              </li>)}</ol>
+            </article>
+            <article>
+              <p className="panel-label"><span>02</span> RESCAN PROOF</p>
+              {verification.rescan ? <div className="rescan-proof">
+                <div><span>SCANNER</span><strong>OSV-Scanner {verification.rescan.scannerVersion}</strong></div>
+                <div><span>NORMALIZED FINDINGS</span><strong>{verification.rescan.findingCount}</strong></div>
+                <div><span>SELECTED</span><code>{verification.selectedAdvisoryId}</code></div>
+                <div className="advisory-gone"><span>✓</span><div><strong>{verification.rescan.selectedAdvisoryPresent ? "Selected advisory remains" : "Selected advisory disappeared"}</strong><p>{verification.rescan.selectedAdvisoryPresent ? "Verification fails closed; no clean claim is made." : "The normalized post-patch OSV result no longer contains the selected vulnerability."}</p></div></div>
+              </div> : <div className="rescan-not-run"><strong>Rescan not reached.</strong><span>An earlier deterministic command failed, so the workflow stopped honestly.</span></div>}
+              <p className="panel-label failure-label"><span>{verification.failure ? "!" : "✓"}</span> FAILURE CLASSIFICATION</p>
+              <div className={`verification-classification ${verification.failure ? "failed" : "passed"}`}><strong>{verification.failure ? sentenceCase(verification.failure.classification) : "none — verification passed"}</strong><span>{verification.failure?.summary ?? "All baseline, post-patch, and selected-advisory checks passed."}</span></div>
+            </article>
+          </div>
+
+          <div className="verification-checkpoint">
+            <div className="ready-icon">{verification.status === "verified" ? "✓" : "×"}</div>
+            <div><strong>{verification.status === "verified" ? "Verification checkpoint complete." : "Verification stopped honestly."}</strong><span>{verification.status === "verified" ? "Baseline and post-patch tests/build pass, the selected advisory is absent, and the approved four-file diff remains intact. Reporting is the next separate issue." : "The failure classification and bounded command facts are retained; reporting and publication remain blocked."}</span></div>
+            <code>{verification.completedAt}</code>
           </div>
         </section>}
       </main>

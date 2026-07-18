@@ -1,6 +1,6 @@
 # Architecture
 
-This document grows only with implemented milestones. Full verification, rescan, and report generation remain placeholders until their issues begin.
+This document grows only with implemented milestones. Report generation remains a placeholder until its issue begins.
 
 The Milestone 1 slice is: bundled npm fixture → OSV-Scanner subprocess → validated normalized finding → findings UI.
 
@@ -83,3 +83,13 @@ OSV and command output are deterministic facts. There is no model call or interp
 - Validation permits exactly one `it(...)` block in `test/theme.test.js` before the final suite close. It requires a benign `previewLabel: ignored` input, supported `accent`/`density` assertions, and absence proof via `Object.hasOwn`; prototype-related keys, exploit payloads, imports, commands, processes, and multiple tests fail closed.
 - The executor runs only `node --test test/theme.test.js` without a shell under timeout/output limits. Exit 0 retains the four-file diff; any failed command restores the original test file and records the failure honestly.
 - The result artifact retains model provenance, safety rationale, uncertainty, exact test diff, bounded command facts, and source-clean state. No full suite, build, rescan, commit, push, or report runs in Issue #11.
+
+## Implemented M3 verification boundary
+
+- `POST /api/demo/verification` requires the same approved plan and accepted isolation, dependency, compatibility-repair, and targeted-test results from the active server session. Every plan/run identity must agree.
+- Before commands run, the executor revalidates canonical paths, branch, baseline commit, clean source checkout, the exact four changed files, and byte-for-byte equality with all three recorded patch diffs.
+- Baseline runs `npm ci --ignore-scripts`, `npm test`, and `npm run build` against the clean vulnerable source checkout. Post-patch runs the same install, the exact targeted test, the full test command, and build against the isolated worktree. Commands run without a shell under time/output limits.
+- OSV-Scanner directory discovery ignores Git worktrees, so the rescan uses the narrower validated command `osv-scanner scan source --lockfile package-lock.json --format json --verbosity error`. Its raw exit semantics and normalized npm findings are retained.
+- Each command records its phase, kind, exact command, raw exit code, duration, bounded/redacted stdout/stderr summary, truncation state, and one of `passed`, `failed`, or `findings_present`.
+- Verification stops on the first failed deterministic command. Failures are classified by exact stage; an unusable rescan and a rescan that still contains `GHSA-9c47-m6qq-7p4h` are distinct terminal failures.
+- A verified result requires all seven install/test/build commands to pass, a usable OSV rescan with the selected advisory absent, the original four-file diff intact, and the source checkout clean. Reporting, commit, push, and merge remain outside Issue #12.

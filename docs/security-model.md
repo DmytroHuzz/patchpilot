@@ -42,3 +42,11 @@ PatchPilot will operate only inside a validated repository or isolated worktree,
 - The validator allows one test block in `test/theme.test.js` using only benign `previewLabel: ignored` input. It rejects `__proto__`, constructor/prototype operations, pollution payloads, imports, dependencies, extra commands, process/network access, and broad test generation.
 - Only `node --test test/theme.test.js` may execute. Output is bounded and redacted; a nonzero exit restores the original test file, while a passing exit retains exactly the approved four-file diff.
 - This targeted pass is evidence for one mitigation behavior only. It is not the full suite, build, rescan, exploitability proof, or security guarantee; those claims remain blocked until later deterministic stages.
+
+## Implemented verification controls
+
+- Verification revalidates the exact approved result chain, branch, baseline commit, canonical paths, clean source checkout, four-file boundary, and all retained diffs before and after command execution.
+- Commands use fixed executable/argument arrays without a shell. Baseline and patched installs disable lifecycle scripts; every process has timeout and buffer limits, and retained output is token/credential-redacted and capped.
+- OSV-Scanner receives only the validated patched `package-lock.json`. Exit 0 means a clean scanner result; exit 1 with parseable output is retained as `findings_present`, not mislabeled as an execution error.
+- A nonzero install/test/build result stops later commands. Scanner execution/normalization failure and continued presence of the selected advisory have separate explicit classifications.
+- Passing verification proves only this golden baseline, patched command set, and selected-advisory rescan. It does not prove deployment safety, production behavior, absence of every vulnerability, or exploitability.

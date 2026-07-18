@@ -11,4 +11,5 @@
 - The dependency step currently supports only the golden direct dependency `json5` and the exact approved version command.
 - Compatibility repair is limited to the golden `parseUserTheme` function and a syntax-only probe. It cannot diagnose arbitrary upgrade breakage and stops after two failed attempts.
 - Test generation is limited to one benign allowlist regression in the bundled test file. It does not generate exploit payloads or general test suites.
-- The current flow stops after the focused targeted test passes. Full tests, build, rescan, commit, automatic push, and merge remain later or explicitly excluded steps.
+- Verification is limited to the bundled npm baseline, one approved isolated worktree, fixed install/test/build commands, and a lockfile-scoped OSV rescan of the selected advisory.
+- The current flow stops after deterministic verification. Report generation, patch commit, automatic push, PR creation, deployment, and merge remain later or explicitly excluded steps.

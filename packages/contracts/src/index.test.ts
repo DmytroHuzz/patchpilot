@@ -7,6 +7,8 @@ import {
   IsolationRunSchema,
   NormalizedScanResultSchema,
   RemediationPlanSchema,
+  VerificationCommandResultSchema,
+  VerificationResultSchema,
   productName,
 } from "./index.js";
 
@@ -169,5 +171,45 @@ describe("contracts package", () => {
       compatibilityRisks: ["The failure remains unresolved."],
       remainingUnknowns: ["The root cause is outside the bounded context."],
     })).toThrow("unrelated-failure");
+  });
+
+  it("requires honest verification command and terminal failure classifications", () => {
+    expect(() => VerificationCommandResultSchema.parse({
+      phase: "rescan",
+      kind: "rescan",
+      command: "osv-scanner scan source --lockfile package-lock.json --format json --verbosity error",
+      status: "findings_present",
+      exitCode: 0,
+      durationMs: 1,
+      stdoutSummary: "No findings",
+      stderrSummary: "",
+      outputTruncated: false,
+    })).toThrow("exit code 1");
+
+    expect(() => VerificationResultSchema.parse({
+      runId: "run-00000000-0000-4000-8000-000000000012",
+      planId: `plan-${"a".repeat(64)}`,
+      status: "failed",
+      selectedAdvisoryId: "GHSA-9c47-m6qq-7p4h",
+      commands: [{
+        phase: "baseline",
+        kind: "install",
+        command: "npm ci --ignore-scripts",
+        status: "failed",
+        exitCode: 1,
+        durationMs: 1,
+        stdoutSummary: "",
+        stderrSummary: "install failed",
+        outputTruncated: false,
+      }],
+      baseline: { installPassed: false, targetedTestPassed: null, fullTestsPassed: null, buildPassed: null },
+      postPatch: { installPassed: null, targetedTestPassed: null, fullTestsPassed: null, buildPassed: null },
+      rescan: null,
+      failure: null,
+      changedFiles: ["package-lock.json", "package.json", "src/theme.js", "test/theme.test.js"],
+      sourceCheckoutClean: true,
+      resultLogPath: "/safe/verification.json",
+      completedAt: "2026-07-18T11:00:00.000Z",
+    })).toThrow("honest failure classification");
   });
 });

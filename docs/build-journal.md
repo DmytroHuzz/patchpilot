@@ -150,3 +150,17 @@
 - Browser acceptance passed detect → investigate → approve → isolate → update → repair → test on the preserved accepted run `run-6098eda8-bc2e-440b-98ca-09689f64a806`. The final panel visibly showed exactly one benign test, its passing targeted command and complete output, the retained test diff, clean source checkout, safety rationale, remaining unknown, and the explicit full-verification boundary with no product error state.
 - No full patched-repository suite/build, rescan, report, branch commit/push, merge, other ecosystem, or general test generation was added.
 - Scope expansions: none.
+
+## 2026-07-18 — Issue 12: baseline and post-patch verification
+
+- Acceptance target: retain exact command exit codes, durations, and bounded summaries; pass baseline and post-patch tests/build; prove the selected advisory disappears; and classify failures honestly.
+- Direct environment validation passed baseline install/tests/build and patched install/targeted/full tests/build without changing tracked source or patch files.
+- The first rescan probe used a relative Git-worktree directory and the reserved zsh variable `status`; zsh rejected the assignment and OSV-Scanner reported no package sources. Canonical directory scans also failed because OSV-Scanner ignores the Git worktree root. A lockfile-scoped invocation succeeds with zero findings, so the implementation records that narrower actual command.
+- Added strict command, failure, rescan, request, and terminal-result contracts. Verified results require all seven install/test/build commands, a selected-advisory-clean rescan, the exact four-file diff, and a clean source checkout.
+- The executor revalidates the full approved result chain and patch bytes, runs fixed commands without a shell under timeout/output/redaction limits, stops on the first failure, and distinguishes command, scanner, and continued-advisory failures.
+- The first focused typecheck exposed use of `.shape` after a Zod object refinement. Extracted the command enum into a reusable schema; the next typecheck passed.
+- Real temporary-Git tests cover the eight-record success path, an early baseline-test stop, and a completed rescan where the selected advisory remains. A root-level focused test filter was forwarded to every workspace and failed in contracts with no matching file; package-scoped server and contract runs passed.
+- `npm run check` passed 58 tests across server and contracts plus all production builds. Final review also tightened command-kind/phase matching, required the exact eight-command verified sequence, bound failure classifications to the terminal command fact, and added relative lockfile normalization coverage.
+- Live acceptance on `run-6098eda8-bc2e-440b-98ca-09689f64a806` retained eight exit-0 command facts: three baseline commands, four post-patch commands, and the normalized OSV rescan. OSV-Scanner 2.3.8 returned zero findings, the selected advisory was absent, the four-file diff remained exact, and the source checkout stayed clean.
+- Browser acceptance passed the full detect → investigate → approve → isolate → update → repair → test → verify path on `run-224b2bb8-1ef2-4e68-9192-464918976514`. The final panel visibly showed baseline/post-patch passes, exact command/exit/duration facts, zero normalized findings, selected-advisory absence, clean source state, and the report-only next boundary with no product error state.
+- Scope expansions: none. Verification only; report generation and Git publication remain separate issues.

@@ -38,8 +38,8 @@
 - [x] Approved dependency update changes only the manifest and lockfile.
 - [x] Meaningful non-lockfile compatibility change occurs.
 - [x] One safe targeted regression test is generated and passes.
-- [ ] Full tests and build pass.
-- [ ] Selected finding disappears on rescan.
+- [x] Baseline and post-patch full tests and build pass.
+- [x] Selected finding disappears on rescan.
 
 ## M4 — Demo quality
 

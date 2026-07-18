@@ -45,4 +45,14 @@ describe("normalizeOsvOutput", () => {
   it("rejects malformed scanner output", () => {
     expect(() => normalizeOsvOutput({ results: [{ packages: "invalid" }] }, "/repo")).toThrow();
   });
+
+  it("resolves a lockfile-scoped scanner path from the verified repository", () => {
+    const relativeSource = structuredClone(rawFinding);
+    relativeSource.results[0]!.source.path = "package-lock.json";
+
+    expect(normalizeOsvOutput(relativeSource, "/verified-worktree")[0]).toMatchObject({
+      manifestPath: "package.json",
+      lockfilePath: "package-lock.json",
+    });
+  });
 });

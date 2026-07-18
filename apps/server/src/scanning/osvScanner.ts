@@ -13,7 +13,7 @@ export interface ScanOptions {
   timeoutMs?: number;
 }
 
-async function scannerVersion(scannerPath: string): Promise<string> {
+export async function scannerVersion(scannerPath: string): Promise<string> {
   const { stdout } = await execFileAsync(scannerPath, ["--version"], { timeout: 5_000, maxBuffer: 64 * 1024 });
   const match = stdout.match(/osv-scanner version:\s*([^\s]+)/);
   if (!match?.[1]) throw new Error("Could not determine OSV-Scanner version");
@@ -58,4 +58,3 @@ export async function scanRepository(options: ScanOptions): Promise<NormalizedSc
     findings: normalizeOsvOutput(raw, repositoryPath),
   });
 }
-

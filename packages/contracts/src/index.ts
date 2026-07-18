@@ -507,6 +507,182 @@ export const NormalizedScanResultSchema = z.object({
 
 export type NormalizedScanResult = z.infer<typeof NormalizedScanResultSchema>;
 
+const VerificationCommandSchema = z.enum([
+  "npm ci --ignore-scripts",
+  "node --test test/theme.test.js",
+  "npm test",
+  "npm run build",
+  "osv-scanner scan source --lockfile package-lock.json --format json --verbosity error",
+]);
+
+export const VerificationCommandResultSchema = z.object({
+  phase: z.enum(["baseline", "post_patch", "rescan"]),
+  kind: z.enum(["install", "targeted_test", "full_test", "build", "rescan"]),
+  command: VerificationCommandSchema,
+  status: z.enum(["passed", "failed", "findings_present"]),
+  exitCode: z.number().int(),
+  durationMs: z.number().int().nonnegative(),
+  stdoutSummary: z.string().max(32 * 1024),
+  stderrSummary: z.string().max(32 * 1024),
+  outputTruncated: z.boolean(),
+}).strict().superRefine((result, context) => {
+  const expectedCommand = {
+    install: "npm ci --ignore-scripts",
+    targeted_test: "node --test test/theme.test.js",
+    full_test: "npm test",
+    build: "npm run build",
+    rescan: "osv-scanner scan source --lockfile package-lock.json --format json --verbosity error",
+  } as const;
+  if (result.command !== expectedCommand[result.kind]) {
+    context.addIssue({ code: z.ZodIssueCode.custom, message: "Verification command must match its declared kind" });
+  }
+  if (result.kind === "targeted_test" && result.phase !== "post_patch") {
+    context.addIssue({ code: z.ZodIssueCode.custom, message: "Targeted tests run only in the post-patch phase" });
+  }
+  if (result.status === "passed" && result.exitCode !== 0) {
+    context.addIssue({ code: z.ZodIssueCode.custom, message: "Passing verification commands require exit code 0" });
+  }
+  if (result.status === "findings_present" && (result.kind !== "rescan" || result.phase !== "rescan" || result.exitCode !== 1)) {
+    context.addIssue({ code: z.ZodIssueCode.custom, message: "Scanner findings require the rescan command and exit code 1" });
+  }
+  if (result.kind === "rescan" && result.command !== "osv-scanner scan source --lockfile package-lock.json --format json --verbosity error") {
+    context.addIssue({ code: z.ZodIssueCode.custom, message: "Rescan results require the bounded OSV command" });
+  }
+  if (result.kind !== "rescan" && result.phase === "rescan") {
+    context.addIssue({ code: z.ZodIssueCode.custom, message: "Only scanner commands may use the rescan phase" });
+  }
+});
+
+export type VerificationCommandResult = z.infer<typeof VerificationCommandResultSchema>;
+
+const VerificationPhaseSummarySchema = z.object({
+  installPassed: z.boolean().nullable(),
+  targetedTestPassed: z.boolean().nullable(),
+  fullTestsPassed: z.boolean().nullable(),
+  buildPassed: z.boolean().nullable(),
+}).strict();
+
+export const VerificationFailureSchema = z.object({
+  classification: z.enum([
+    "baseline_install_failed",
+    "baseline_tests_failed",
+    "baseline_build_failed",
+    "post_patch_install_failed",
+    "targeted_test_failed",
+    "full_tests_failed",
+    "post_patch_build_failed",
+    "rescan_execution_failed",
+    "selected_advisory_still_detected",
+  ]),
+  phase: z.enum(["baseline", "post_patch", "rescan"]),
+  command: VerificationCommandSchema,
+  summary: z.string().min(1).max(2000),
+}).strict();
+
+export type VerificationFailure = z.infer<typeof VerificationFailureSchema>;
+
+export const VerificationRescanSchema = z.object({
+  scanner: z.literal("osv-scanner"),
+  scannerVersion: z.string().min(1),
+  scannedAt: z.string().datetime(),
+  findingCount: z.number().int().nonnegative(),
+  selectedAdvisoryId: z.literal("GHSA-9c47-m6qq-7p4h"),
+  selectedAdvisoryPresent: z.boolean(),
+  findings: z.array(VulnerabilityFindingSchema),
+}).strict().superRefine((rescan, context) => {
+  if (rescan.findingCount !== rescan.findings.length) {
+    context.addIssue({ code: z.ZodIssueCode.custom, message: "Rescan finding count must match normalized findings" });
+  }
+  const selectedPresent = rescan.findings.some((finding) => finding.id === rescan.selectedAdvisoryId);
+  if (selectedPresent !== rescan.selectedAdvisoryPresent) {
+    context.addIssue({ code: z.ZodIssueCode.custom, message: "Selected advisory state must match normalized findings" });
+  }
+});
+
+export type VerificationRescan = z.infer<typeof VerificationRescanSchema>;
+
+export const VerificationResultSchema = z.object({
+  runId: z.string().regex(/^run-[0-9a-f-]{36}$/),
+  planId: z.string().regex(/^plan-[a-f0-9]{64}$/),
+  status: z.enum(["verified", "failed"]),
+  selectedAdvisoryId: z.literal("GHSA-9c47-m6qq-7p4h"),
+  commands: z.array(VerificationCommandResultSchema).min(1).max(8),
+  baseline: VerificationPhaseSummarySchema,
+  postPatch: VerificationPhaseSummarySchema,
+  rescan: VerificationRescanSchema.nullable(),
+  failure: VerificationFailureSchema.nullable(),
+  changedFiles: z.array(z.enum(["package-lock.json", "package.json", "src/theme.js", "test/theme.test.js"])),
+  sourceCheckoutClean: z.literal(true),
+  resultLogPath: z.string().min(1),
+  completedAt: z.string().datetime(),
+}).strict().superRefine((result, context) => {
+  const fullPatch = "package-lock.json,package.json,src/theme.js,test/theme.test.js";
+  if (result.changedFiles.join(",") !== fullPatch) {
+    context.addIssue({ code: z.ZodIssueCode.custom, message: "Verification must preserve the approved four-file diff" });
+  }
+  if (result.status === "verified") {
+    const allPassed = result.baseline.installPassed === true
+      && result.baseline.fullTestsPassed === true
+      && result.baseline.buildPassed === true
+      && result.postPatch.installPassed === true
+      && result.postPatch.targetedTestPassed === true
+      && result.postPatch.fullTestsPassed === true
+      && result.postPatch.buildPassed === true;
+    const expectedSequence = [
+      "baseline:install",
+      "baseline:full_test",
+      "baseline:build",
+      "post_patch:install",
+      "post_patch:targeted_test",
+      "post_patch:full_test",
+      "post_patch:build",
+      "rescan:rescan",
+    ];
+    const actualSequence = result.commands.map((command) => `${command.phase}:${command.kind}`);
+    const commandsPassed = result.commands.slice(0, 7).every((command) => command.status === "passed")
+      && result.commands[7]?.status !== "failed";
+    if (!allPassed || result.baseline.targetedTestPassed !== null || result.failure !== null || result.rescan?.selectedAdvisoryPresent !== false || actualSequence.join(",") !== expectedSequence.join(",") || !commandsPassed) {
+      context.addIssue({ code: z.ZodIssueCode.custom, message: "Verified results require every command to pass and the selected advisory to disappear" });
+    }
+  } else if (result.failure === null) {
+    context.addIssue({ code: z.ZodIssueCode.custom, message: "Failed verification requires an honest failure classification" });
+  } else {
+    const lastCommand = result.commands.at(-1);
+    const expectedFailure = {
+      baseline_install_failed: ["baseline", "install"],
+      baseline_tests_failed: ["baseline", "full_test"],
+      baseline_build_failed: ["baseline", "build"],
+      post_patch_install_failed: ["post_patch", "install"],
+      targeted_test_failed: ["post_patch", "targeted_test"],
+      full_tests_failed: ["post_patch", "full_test"],
+      post_patch_build_failed: ["post_patch", "build"],
+      rescan_execution_failed: ["rescan", "rescan"],
+      selected_advisory_still_detected: ["rescan", "rescan"],
+    } as const;
+    const [expectedPhase, expectedKind] = expectedFailure[result.failure.classification];
+    const selectedAdvisoryFailure = result.failure.classification === "selected_advisory_still_detected";
+    if (
+      !lastCommand
+      || lastCommand.phase !== expectedPhase
+      || lastCommand.kind !== expectedKind
+      || lastCommand.command !== result.failure.command
+      || result.failure.phase !== expectedPhase
+      || (selectedAdvisoryFailure ? result.rescan?.selectedAdvisoryPresent !== true : lastCommand.status !== "failed")
+    ) {
+      context.addIssue({ code: z.ZodIssueCode.custom, message: "Verification failure classification must match the terminal command fact" });
+    }
+  }
+});
+
+export type VerificationResult = z.infer<typeof VerificationResultSchema>;
+
+export const VerificationRequestSchema = z.object({
+  planId: z.string().regex(/^plan-[a-f0-9]{64}$/),
+  runId: z.string().regex(/^run-[0-9a-f-]{36}$/),
+}).strict();
+
+export type VerificationRequest = z.infer<typeof VerificationRequestSchema>;
+
 export const InvestigationResultSchema = z.object({
   finding: VulnerabilityFindingSchema,
   advisory: NormalizedAdvisorySchema,

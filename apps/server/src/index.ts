@@ -8,6 +8,7 @@ import {
   IsolationRequestSchema,
   RemediationDecisionRequestSchema,
   TargetedTestRequestSchema,
+  VerificationRequestSchema,
 } from "@patchpilot/contracts";
 import { investigateRepository } from "./investigation/investigateRepository.js";
 import { RemediationApprovalStore } from "./remediation/approvalGate.js";
@@ -17,6 +18,7 @@ import { applyApprovedDependencyUpdate, DependencyUpdateStore } from "./remediat
 import { CompatibilityRepairStore, runCompatibilityRepairLoop } from "./remediation/repairCompatibilityLoop.js";
 import { generateTargetedRegressionTest, TargetedTestStore } from "./remediation/generateTargetedRegressionTest.js";
 import { scanRepository } from "./scanning/osvScanner.js";
+import { runBaselineAndPostPatchVerification, VerificationStore } from "./verification/runVerification.js";
 
 export const serviceName = "PatchPilot orchestrator";
 const root = process.cwd();
@@ -28,6 +30,7 @@ const isolationRunStore = new IsolationRunStore();
 const dependencyUpdateStore = new DependencyUpdateStore();
 const compatibilityRepairStore = new CompatibilityRepairStore();
 const targetedTestStore = new TargetedTestStore();
+const verificationStore = new VerificationStore();
 
 const contentTypes: Record<string, string> = {
   ".css": "text/css; charset=utf-8",
@@ -234,6 +237,43 @@ const server = createServer(async (request, response) => {
     return;
   }
 
+  if (request.method === "POST" && request.url === "/api/demo/verification") {
+    try {
+      const verificationRequest = VerificationRequestSchema.parse(await readJsonBody(request));
+      const existing = verificationStore.getByRun(verificationRequest.runId);
+      if (existing) {
+        if (existing.planId !== verificationRequest.planId) throw new Error("Verification run does not match the requested approved plan");
+        response.writeHead(200, { "content-type": "application/json" });
+        response.end(JSON.stringify(existing));
+        return;
+      }
+      const proposal = approvalStore.get(verificationRequest.planId);
+      const isolationRun = isolationRunStore.getById(verificationRequest.runId);
+      const dependencyUpdate = dependencyUpdateStore.getByRun(verificationRequest.runId);
+      const compatibilityRepair = compatibilityRepairStore.getByRun(verificationRequest.runId);
+      const targetedTest = targetedTestStore.getByRun(verificationRequest.runId);
+      if (!proposal || !isolationRun || !dependencyUpdate || !compatibilityRepair || !targetedTest) {
+        throw new Error("Approved patched isolation run is unknown or expired");
+      }
+      const result = await runBaselineAndPostPatchVerification({
+        proposal,
+        isolationRun,
+        dependencyUpdate,
+        compatibilityRepair,
+        targetedTest,
+        boundaryRoot: root,
+        resultRoot: path.join(root, "runs/audit"),
+      });
+      const stored = verificationStore.register(result);
+      response.writeHead(200, { "content-type": "application/json" });
+      response.end(JSON.stringify(stored));
+    } catch (error) {
+      response.writeHead(400, { "content-type": "application/json" });
+      response.end(JSON.stringify({ error: error instanceof Error ? error.message : "Verification failed" }));
+    }
+    return;
+  }
+
   const requestPath = request.url === "/" ? "/index.html" : (request.url ?? "/index.html");
   const filePath = path.resolve(webRoot, `.${requestPath}`);
   if (!filePath.startsWith(`${webRoot}${path.sep}`)) {
@@ -252,5 +292,5 @@ const server = createServer(async (request, response) => {
 });
 
 server.listen(port, "127.0.0.1", () => {
-  console.log(`PatchPilot Milestone 3 targeted regression test: http://127.0.0.1:${port}`);
+  console.log(`PatchPilot Milestone 3 deterministic verification: http://127.0.0.1:${port}`);
 });
