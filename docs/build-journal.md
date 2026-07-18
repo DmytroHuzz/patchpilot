@@ -259,7 +259,7 @@
 - User explicitly authorized uploading the corrected review MP4 through the active YouTube account. Chose unlisted visibility as the reversible Devpost-ready default; changing it to public remains separately approval-gated.
 - The first Chrome file handoff was blocked because the browser extension lacked file-URL access. After the user enabled that permission, the same prepared YouTube Studio upload resumed successfully.
 - Uploaded the verified local artifact to the `NewMedia` channel with title `PatchPilot — Human-Reviewed Dependency Patching | OpenAI Build Week`, the golden-path description, repository link, and synthetic-narration disclosure. Audience is set to not made for kids.
-- YouTube confirmed `Video published` at <https://youtu.be/9PyrTSgSAhU>. Upload and SD processing completed; the copyright check continued in the background when the unlisted visibility was saved.
+- YouTube confirmed `Video published` for the initial review upload. Upload and SD processing completed; the copyright check continued in the background when the unlisted visibility was saved.
 - Issue #17 remains open. Public visibility, Devpost mutation, `/feedback`, and the final submission checklist are not complete.
 
 ## 2026-07-18 — Issue 17 partial: post-approval frame correction
@@ -271,3 +271,11 @@
 - Re-rendered with the existing nine neural narration clips, so wording, voice, and slide timing remain synchronized. Five midpoint extracts from the final MP4 confirmed clean framing from `04 · Isolate` through `10 · Handoff`.
 - The corrected local cut is 2:18.17 with one H.264 video track and one AAC audio track. SHA-256: `feac6ec01379b859108eb6205d9d5910ace00a5f31e08edd7818d7f8dba60619`.
 - Scope expansions: none. Product behavior, narration, public visibility, Devpost state, and remote repository publication are unchanged.
+
+## 2026-07-18 — Issue 17 partial: corrected unlisted YouTube upload
+
+- Acceptance criteria: upload the visually verified post-approval framing correction, retain unlisted visibility and the existing narration metadata, wait for YouTube checks, update the repository's canonical review link, and leave the earlier upload recoverable.
+- Uploaded the SHA-256-verified corrected MP4 to the `NewMedia` channel with the existing title, golden-path description, repository link, and synthetic-narration disclosure. Audience remains set to not made for kids.
+- YouTube completed processing and the copyright check with no issues, then confirmed `Video published` at <https://youtu.be/qxRCA4PA4LA> with unlisted visibility.
+- The earlier unlisted upload was not deleted. It is no longer referenced by the repository and remains available for manual cleanup if explicitly requested.
+- Scope expansions: none. Product behavior, narration, public visibility, Devpost state, `/feedback`, and remote repository publication are unchanged.

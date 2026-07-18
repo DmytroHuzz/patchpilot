@@ -31,4 +31,4 @@ The script uses AVFoundation and writes ignored, regenerable assets under `submi
 
 The checked-in UI captures under `submission/video-frames/` are produced from one clean real local demo, not mocked screens. This makes the review cut reproducible from a clean macOS clone without rerunning the browser capture. All narration options are synthetic and must remain disclosed. The MP4 remains a review artifact until a human approves public visibility. Making the video public and inserting its URL into the final submission remain separate actions.
 
-Current review upload: [PatchPilot — Human-Reviewed Dependency Patching | OpenAI Build Week](https://youtu.be/9PyrTSgSAhU). It is unlisted, marked not made for kids, and uses the description above to disclose synthetic narration. Public visibility remains a separate approval-gated action.
+Current review upload: [PatchPilot — Human-Reviewed Dependency Patching | OpenAI Build Week](https://youtu.be/qxRCA4PA4LA). It is unlisted, marked not made for kids, and uses the description above to disclose synthetic narration. Public visibility remains a separate approval-gated action.
