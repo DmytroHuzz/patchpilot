@@ -25,7 +25,7 @@
 ## M2 — Investigation
 
 - [x] Advisory facts normalize with an explicitly labeled cached fallback.
-- [ ] Exact file/line evidence appears.
+- [x] Exact file/line evidence appears.
 - [ ] Structured assessment validates.
 - [ ] Uncertainty is visible.
 

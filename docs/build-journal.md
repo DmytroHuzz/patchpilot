@@ -55,3 +55,14 @@
 - Added tests for live/cached semantic parity, provenance, malformed-live fallback, and unsafe cache IDs.
 - No repository evidence collection, model prompt, or affectedness assessment was added.
 - Scope expansions: none.
+
+## 2026-07-18 — Issue 5: bounded repository evidence
+
+- Acceptance target: exact JSON5 import/call evidence, repository-relative file/line excerpts, bounded collection, and safe absence language.
+- Added strict evidence item/bundle contracts and a read-only collector with file-count, file-size, total-byte, evidence-count, and excerpt-context limits.
+- The first focused test exposed backticked advisory syntax around `parse`; expanded the deterministic parser to recognize that exact form and retained the test as a regression guard.
+- Golden evidence identifies `src/theme.js:1` and `src/theme.js:8–10`, including the `JSON5.parse(rawTheme)` call.
+- Added explicit absence evidence for `__proto__` that states absence is not proof of non-applicability.
+- Added a demo integration command that writes a validated evidence artifact and fails when the expected call site is missing.
+- No model call or affectedness verdict was added.
+- Scope expansions: none.

@@ -39,6 +39,38 @@ export const NormalizedAdvisorySchema = z.object({
 
 export type NormalizedAdvisory = z.infer<typeof NormalizedAdvisorySchema>;
 
+export const EvidenceItemSchema = z.object({
+  id: z.string().min(1),
+  type: z.enum(["import", "call-site", "configuration", "data-flow", "absence", "advisory"]),
+  file: z.string().min(1).optional(),
+  startLine: z.number().int().positive().optional(),
+  endLine: z.number().int().positive().optional(),
+  excerpt: z.string().min(1).optional(),
+  explanation: z.string().min(1),
+  deterministic: z.boolean(),
+}).superRefine((item, context) => {
+  const positioned = item.file !== undefined || item.startLine !== undefined || item.endLine !== undefined || item.excerpt !== undefined;
+  if (positioned && (item.file === undefined || item.startLine === undefined || item.endLine === undefined || item.excerpt === undefined)) {
+    context.addIssue({ code: z.ZodIssueCode.custom, message: "Positioned evidence requires file, lines, and excerpt" });
+  }
+  if (item.startLine !== undefined && item.endLine !== undefined && item.endLine < item.startLine) {
+    context.addIssue({ code: z.ZodIssueCode.custom, message: "Evidence endLine must not precede startLine" });
+  }
+});
+
+export type EvidenceItem = z.infer<typeof EvidenceItemSchema>;
+
+export const RepositoryEvidenceBundleSchema = z.object({
+  repositoryPath: z.string().min(1),
+  findingId: z.string().min(1),
+  searchedFiles: z.array(z.string()),
+  searchedBytes: z.number().int().nonnegative(),
+  truncated: z.boolean(),
+  items: z.array(EvidenceItemSchema),
+});
+
+export type RepositoryEvidenceBundle = z.infer<typeof RepositoryEvidenceBundleSchema>;
+
 export const NormalizedScanResultSchema = z.object({
   scanner: z.literal("osv-scanner"),
   scannerVersion: z.string().min(1),

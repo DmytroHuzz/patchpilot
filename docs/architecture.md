@@ -21,3 +21,11 @@ OSV and command output are deterministic facts. There is no model call or interp
 - The checked-in golden advisory uses the same contract and is always labeled `cached-demo`; it is never represented as fresh OSV data.
 - The resolver prefers valid matching live data and falls back only when live data is absent, malformed, or mismatched.
 - Cached paths accept only safe advisory IDs and remain inside the configured cache directory.
+
+## Implemented M2 evidence boundary
+
+- The read-only collector walks a bounded set of JavaScript, TypeScript, and JSON source files while skipping dependencies, Git data, build output, lockfiles, oversized files, and symlinks.
+- Advisory text supplies deterministic symbol and configuration search terms; the collector does not invent reachability claims.
+- Import, call-site, configuration, and absence evidence use stable IDs, repository-relative paths, exact positive line ranges, compact excerpts, and factual explanations.
+- Absence evidence explicitly states that a missed reference is not proof of non-applicability.
+- `npm run evidence:demo` writes the validated golden bundle to the ignored `runs/m2-evidence.json` artifact and fails unless the expected call site is present.

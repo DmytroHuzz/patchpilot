@@ -11,6 +11,7 @@
     "check": "npm run typecheck && npm test && npm run build",
     "demo": "npm run build && tsx apps/server/src/index.ts",
     "dev": "npm run dev --workspace @patchpilot/web",
+    "evidence:demo": "tsx apps/server/src/cli/collectDemoEvidence.ts",
     "scan:demo": "tsx apps/server/src/cli/scanDemo.ts",
     "test": "npm run test --workspaces --if-present",
     "typecheck": "npm run typecheck --workspaces --if-present"
