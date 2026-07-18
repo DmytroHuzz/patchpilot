@@ -2,7 +2,7 @@
 
 PatchPilot investigates a known npm dependency vulnerability, proposes the smallest reviewable remediation, and proves the result with tests and a rescan.
 
-[GitHub repository](https://github.com/DmytroHuzz/patchpilot) · [Hackathon workspace](https://app.notion.com/p/3a1dc269d70a811ebcf5cee1164cb267)
+[GitHub repository](https://github.com/DmytroHuzz/patchpilot)
 
 > Milestone 1 complete: the bundled repository resets cleanly, produces one real OSV finding, and displays its normalized deterministic facts. AI affectedness analysis has not started.
 

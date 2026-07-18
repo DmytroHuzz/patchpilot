@@ -13,7 +13,7 @@ Investigate one known npm dependency vulnerability against the actual repository
 
 ## Scope and cut list
 
-The MVP is Node.js 20+, npm, local Git, one bundled direct vulnerability, OSV-Scanner, explicit approval, verification, and a report. GitHub PR creation, hosted deployment, chat, multi-advisory support, Dependabot ingestion, advanced dashboards, and Notion automation are cut before any golden-path requirement.
+The MVP is Node.js 20+, npm, local Git, one bundled direct vulnerability, OSV-Scanner, explicit approval, verification, and a report. GitHub PR creation, hosted deployment, chat, multi-advisory support, Dependabot ingestion, and advanced dashboards are cut before any golden-path requirement.
 
 ## Deadlines
 
@@ -26,8 +26,7 @@ The MVP is Node.js 20+, npm, local Git, one bundled direct vulnerability, OSV-Sc
 - Before submission, invoke `/feedback` from this main task and record the resulting reference in the Devpost draft.
 - Public repository: https://github.com/DmytroHuzz/patchpilot
 - GitHub issues: https://github.com/DmytroHuzz/patchpilot/issues
-- Notion workspace: https://app.notion.com/p/3a1dc269d70a811ebcf5cee1164cb267
-- GitHub Projects v2 board: pending a one-time `project` and `read:project` CLI scope grant; the equivalent Notion board is live.
+- GitHub Projects v2 board: pending a one-time `project` and `read:project` CLI scope grant.
 
 ## Definition of done
 

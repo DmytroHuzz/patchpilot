@@ -7,7 +7,7 @@
 - Verified Node.js 22.23.1, npm 10.9.8, and an empty Git repository on `main`.
 - Found `osv-scanner` and `gh` unavailable locally; scanner bootstrapping is part of M1, while remote GitHub setup is non-blocking.
 - Preserved the main Codex task/session ID: `019f7422-123d-7242-a0cf-c7f6f237594b`.
-- Created the workspace skeleton, local GitHub issue plan, milestone checklist, documentation placeholders, and Notion fallback structure.
+- Created the workspace skeleton, local GitHub issue plan, milestone checklist, and documentation placeholders.
 - Initial workspace check exposed Vitest's expected no-tests failure; added a contract smoke test and limited `--passWithNoTests` to feature workspaces that have not received tests yet.
 - Scope expansions: none.
 
@@ -36,6 +36,12 @@
 - Enabled GitHub Issues and Dependabot vulnerability alerts; both CI and demo-smoke workflows passed on the initial push.
 - Created milestones M1–M5, demo/priority labels, and all 17 issue-ready work items with user value, scope, acceptance criteria, dependencies, demo relevance, and explicit non-goals.
 - Closed GitHub issues 1–3 with Milestone 1 verification comments. Issue 4 is the next Ready item; no M2 code began during this synchronization.
-- Created the Notion root workspace, Project Brief, Implementation Plan, Research and Sources, Demo Story, Submission Draft, Ideas Parking Lot, Build Dashboard, 17 linked tasks, and Decisions Log with the three repository ADRs.
-- GitHub Projects v2 creation remains pending because the authenticated CLI token lacks the separate `project` and `read:project` scopes. The Notion board provides the specified status view in the meantime.
+- GitHub Projects v2 creation remains pending because the authenticated CLI token lacks the separate `project` and `read:project` scopes.
 - Scope expansions: none. This work completes the project-control deliverables already required by the specification.
+
+## 2026-07-18 — Public/private planning boundary correction
+
+- Removed internal planning-tool names, links, synchronization details, and mirror artifacts from the public repository.
+- Rewrote the affected GitHub issue comment so public project communication covers GitHub state only.
+- Kept the internal planning workspace and its data unchanged.
+- Scope expansions: none.

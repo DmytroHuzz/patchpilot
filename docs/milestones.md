@@ -9,7 +9,7 @@
 - [x] CI and demo-smoke workflows pass on GitHub.
 - [x] Public GitHub repository, milestones, labels, and 17 issues created.
 - [ ] GitHub Projects v2 board created (token needs `project` and `read:project` scopes; non-blocking).
-- [x] Notion root, implementation pages, task board, linked tasks, and decision log synchronized.
+- [x] Internal planning workspace synchronized separately from the public repository.
 
 ## M1 — Deterministic scan
 
