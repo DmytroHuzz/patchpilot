@@ -13,3 +13,11 @@ The Milestone 1 slice is: bundled npm fixture → OSV-Scanner subprocess → val
 - The read-only `POST /api/demo/scan` endpoint scans only the bundled fixture; the React screen renders the returned facts.
 
 OSV and command output are deterministic facts. There is no model call or interpretation in M1.
+
+## Implemented M2 advisory boundary
+
+- Live OSV advisory objects normalize into a dedicated Zod contract for identity, aliases, summary, details, severity, affected ranges, fixed versions, affected functions when structured data supplies them, references, and provenance.
+- Normalized details exclude proof-of-concept sections before any later model context is built.
+- The checked-in golden advisory uses the same contract and is always labeled `cached-demo`; it is never represented as fresh OSV data.
+- The resolver prefers valid matching live data and falls back only when live data is absent, malformed, or mismatched.
+- Cached paths accept only safe advisory IDs and remain inside the configured cache directory.

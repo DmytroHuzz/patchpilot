@@ -45,3 +45,13 @@
 - Rewrote the affected GitHub issue comment so public project communication covers GitHub state only.
 - Kept the internal planning workspace and its data unchanged.
 - Scope expansions: none.
+
+## 2026-07-18 — Issue 4: advisory normalization and cached fallback
+
+- Acceptance target: complete normalized OSV facts, deterministic cached parity, explicit fallback provenance, and network-independent contract tests.
+- Added a dedicated advisory contract and reused its normalizer from the live OSV finding path.
+- Added a checked-in golden advisory labeled `cached-demo`; the resolver uses it only when matching live input is absent or invalid.
+- Excluded proof-of-concept sections from normalized details before later model context construction.
+- Added tests for live/cached semantic parity, provenance, malformed-live fallback, and unsafe cache IDs.
+- No repository evidence collection, model prompt, or affectedness assessment was added.
+- Scope expansions: none.

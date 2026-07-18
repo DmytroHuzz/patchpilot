@@ -24,6 +24,21 @@ export const VulnerabilityFindingSchema = z.object({
 
 export type VulnerabilityFinding = z.infer<typeof VulnerabilityFindingSchema>;
 
+export const NormalizedAdvisorySchema = z.object({
+  id: z.string().min(1),
+  aliases: z.array(z.string()),
+  summary: z.string().min(1),
+  details: z.string().min(1),
+  severity: z.string().min(1).optional(),
+  affectedRanges: z.array(z.string()),
+  fixedVersions: z.array(z.string()),
+  affectedFunctions: z.array(z.string()),
+  references: z.array(z.string().url()),
+  source: z.enum(["osv", "cached-demo"]),
+});
+
+export type NormalizedAdvisory = z.infer<typeof NormalizedAdvisorySchema>;
+
 export const NormalizedScanResultSchema = z.object({
   scanner: z.literal("osv-scanner"),
   scannerVersion: z.string().min(1),

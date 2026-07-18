@@ -16,9 +16,12 @@ const affectedSchema = z.object({
     type: z.string(),
     events: z.array(eventSchema),
   })).default([]),
+  ecosystem_specific: z.object({
+    affected_functions: z.array(z.string()).optional(),
+  }).passthrough().optional(),
 });
 
-const vulnerabilitySchema = z.object({
+export const OsvVulnerabilitySchema = z.object({
   id: z.string(),
   aliases: z.array(z.string()).default([]),
   summary: z.string().default("No advisory summary supplied"),
@@ -27,6 +30,8 @@ const vulnerabilitySchema = z.object({
   references: z.array(z.object({ url: z.string() })).default([]),
   database_specific: z.object({ severity: z.string().optional() }).passthrough().optional(),
 });
+
+export type OsvVulnerability = z.infer<typeof OsvVulnerabilitySchema>;
 
 const packageSchema = z.object({
   package: z.object({
@@ -38,7 +43,7 @@ const packageSchema = z.object({
     ids: z.array(z.string()).default([]),
     max_severity: z.string().optional(),
   })).default([]),
-  vulnerabilities: z.array(vulnerabilitySchema).default([]),
+  vulnerabilities: z.array(OsvVulnerabilitySchema).default([]),
 });
 
 export const OsvScannerOutputSchema = z.object({
@@ -52,4 +57,3 @@ export const OsvScannerOutputSchema = z.object({
 });
 
 export type OsvScannerOutput = z.infer<typeof OsvScannerOutputSchema>;
-
