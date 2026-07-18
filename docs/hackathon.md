@@ -13,7 +13,9 @@ Investigate one known npm dependency vulnerability against the actual repository
 
 ## Scope and cut list
 
-The MVP is Node.js 20+, npm, local Git, one bundled direct vulnerability, OSV-Scanner, explicit approval, verification, and a report. GitHub PR creation, hosted deployment, chat, multi-advisory support, Dependabot ingestion, and advanced dashboards are cut before any golden-path requirement.
+The MVP is Node.js 20+, npm, local Git, one bundled direct vulnerability, OSV-Scanner, bounded GPT‑5.6 interpretation/proposals, explicit approval, an isolated four-file patch, verification, report, and local Git handoff.
+
+The following are cut from the submission path: arbitrary repository onboarding, remote GitHub PR creation, hosted deployment, chat, multi-advisory support, Dependabot ingestion, other ecosystems, monitoring, SBOMs, runtime exploitability, and dashboards. They may appear only as roadmap ideas.
 
 ## Deadlines
 
@@ -31,6 +33,28 @@ The MVP is Node.js 20+, npm, local Git, one bundled direct vulnerability, OSV-Sc
 ## Definition of done
 
 A judge can follow the README to reset the demo, detect the real vulnerability, inspect cited repository evidence and uncertainty, approve a dependency plus source/configuration patch, observe targeted and full tests, see a clean rescan, and inspect a final report explaining Codex and GPT-5.6 contributions.
+
+## Demo plan
+
+The recorded path is one continuous local UI story:
+
+1. reset and launch the bundled repository;
+2. detect `GHSA-9c47-m6qq-7p4h` in `json5@1.0.1`;
+3. show exact import/call-site evidence, GPT‑5.6 interpretation, and uncertainty;
+4. review and approve the exact four-file remediation plan;
+5. show isolation, dependency update, bounded source repair, and one benign test;
+6. show baseline/post-patch command facts and selected-advisory absence;
+7. generate the evidence report and finish on the review-ready local commit/PR copy with remote publication locked.
+
+Issue #16 owns the sub-three-minute narration, three consecutive rehearsals, and fallback screenshots. The demo uses checked-in model fixtures by default so OpenAI availability is not a recording dependency; scanner/test/build/Git actions remain real.
+
+## Submission requirements
+
+- Public judge-accessible repository with MIT license and verified clean-clone instructions.
+- Public YouTube video under three minutes with audio explaining Codex and GPT‑5.6.
+- Devpost Developer Tools entry with product description, repository and video links, built-with list, acknowledgements, and limitations.
+- Main Codex task `/feedback` reference and retained task ID.
+- Green CI, repeatable reset, three successful rehearsals, and final pre-deadline checklist.
 
 ## Submission checklist
 

@@ -8,9 +8,10 @@
   ],
   "scripts": {
     "build": "npm run build --workspaces --if-present",
-    "check": "npm run typecheck && npm test && npm run build",
+    "check": "npm run docs:check && npm run typecheck && npm test && npm run build",
     "demo": "npm run build && tsx apps/server/src/index.ts",
     "dev": "npm run dev --workspace @patchpilot/web",
+    "docs:check": "node scripts/check-docs.mjs",
     "evidence:demo": "tsx apps/server/src/cli/collectDemoEvidence.ts",
     "investigate:demo": "tsx apps/server/src/cli/investigateDemo.ts",
     "plan:demo": "tsx apps/server/src/cli/planDemo.ts",

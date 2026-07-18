@@ -1,113 +1,221 @@
 # Architecture
 
-This document grows only with implemented milestones.
+PatchPilot is a local TypeScript application with a React presentation layer, a Node.js orchestration service, deterministic repository tools, four bounded GPT‑5.6 reasoning roles, and Zod contracts between every stage.
 
-The Milestone 1 slice is: bundled npm fixture → OSV-Scanner subprocess → validated normalized finding → findings UI.
+This document describes the implemented hackathon build. It does not describe a generic production platform.
 
-## Implemented M1 components
+## Component diagram
 
-- `scripts/setup-osv-scanner.sh` pins OSV-Scanner 2.3.8, selects the macOS/Linux architecture, and verifies the official SHA-256 checksum.
-- The server adapter invokes the CLI without a shell, with a 30-second timeout and 5 MiB output cap. Exit `1` is accepted only when it contains valid finding JSON.
-- Zod validates both the raw fields PatchPilot consumes and the normalized public contract.
-- The CLI writes the latest normalized scan artifact to the ignored `runs/m1-scan.json` path.
-- The read-only `POST /api/demo/scan` endpoint scans only the bundled fixture; the React screen renders the returned facts.
+```mermaid
+flowchart TB
+    subgraph UI["Presentation boundary"]
+        Web["React + Vite UI\napps/web"]
+    end
 
-OSV and command output are deterministic facts. There is no model call or interpretation in M1.
+    subgraph Service["PatchPilot process"]
+        API["HTTP orchestrator\napps/server/src/index.ts"]
+        Contracts["Zod contracts\npackages/contracts"]
+        Scanner["OSV adapter"]
+        Advisory["Advisory normalizer + cached fallback"]
+        Evidence["Bounded repository evidence collector"]
+        Models["GPT-5.6 structured reasoning"]
+        Approval["Exact-plan approval gate"]
+        Patch["Isolation + dependency/source/test executors"]
+        Verify["Baseline/post-patch verification"]
+        Report["Evidence + Git handoff generators"]
+    end
 
-## Implemented M2 advisory boundary
+    subgraph Local["Local machine trust boundary"]
+        Source["Bundled vulnerable source checkout"]
+        Worktree["runs/worktrees/run-*\nisolated patch branch"]
+        Audit["runs/audit\nowner-local ignored artifacts"]
+        Tools["git · npm · node · OSV-Scanner"]
+    end
 
-- Live OSV advisory objects normalize into a dedicated Zod contract for identity, aliases, summary, details, severity, affected ranges, fixed versions, affected functions when structured data supplies them, references, and provenance.
-- Normalized details exclude proof-of-concept sections before any later model context is built.
-- The checked-in golden advisory uses the same contract and is always labeled `cached-demo`; it is never represented as fresh OSV data.
-- The resolver prefers valid matching live data and falls back only when live data is absent, malformed, or mismatched.
-- Cached paths accept only safe advisory IDs and remain inside the configured cache directory.
+    subgraph External["Optional external boundary"]
+        OpenAI["OpenAI Responses API"]
+        OsvData["OSV vulnerability data"]
+    end
 
-## Implemented M2 evidence boundary
+    Web -->|"typed stage requests"| API
+    API <--> Contracts
+    API --> Scanner --> Tools
+    Tools --> OsvData
+    Scanner --> Advisory --> Evidence
+    Evidence --> Models
+    Models -. "only when OPENAI_API_KEY exists" .-> OpenAI
+    Models --> Approval --> Patch
+    Patch --> Source
+    Patch --> Worktree
+    Patch --> Tools
+    Worktree --> Verify --> Tools
+    Verify --> Report --> Audit
+```
 
-- The read-only collector walks a bounded set of JavaScript, TypeScript, and JSON source files while skipping dependencies, Git data, build output, lockfiles, oversized files, and symlinks.
-- Advisory text supplies deterministic symbol and configuration search terms; the collector does not invent reachability claims.
-- Import, call-site, configuration, and absence evidence use stable IDs, repository-relative paths, exact positive line ranges, compact excerpts, and factual explanations.
-- Absence evidence explicitly states that a missed reference is not proof of non-applicability.
-- `npm run evidence:demo` writes the validated golden bundle to the ignored `runs/m2-evidence.json` artifact and fails unless the expected call site is present.
+The model never invokes Git, npm, Node, OSV-Scanner, or the filesystem. It returns structured interpretation or proposals; deterministic executors validate and act only after the approval boundary.
 
-## Implemented M2 interpretation boundary
+## Workflow state machine
 
-- The model receives exactly four context groups: normalized advisory, package relationship, repository metadata, and bounded evidence. Absolute repository paths, arbitrary source files, scanner output, and proof-of-concept content are excluded.
-- The OpenAI integration uses the Responses API, explicit `gpt-5.6` model alias, medium reasoning effort, disabled response storage, and Zod-backed Structured Outputs.
-- `AffectednessAssessment` permits only four bounded verdicts and requires rationale, confidence, evidence ID arrays, non-empty unknowns, non-empty limitations, and next checks.
-- Post-schema validation rejects invented or duplicate evidence IDs, absence evidence used to support affectedness, unsupported not-affected prose, and no-usage verdicts that contradict a deterministic call site.
-- If `OPENAI_API_KEY` is absent, the investigator loads an explicitly labeled `cached-demo` contract fixture and applies the same validators. It is never presented as a live model response.
-- `POST /api/demo/investigate` performs scan → advisory → evidence → assessment without repository writes. The UI separates deterministic facts, evidence, interpretation, uncertainty, and provenance.
+```mermaid
+stateDiagram-v2
+    [*] --> Ready
+    Ready --> Finding: deterministic scan
+    Finding --> Investigated: advisory + evidence + assessment
+    Investigated --> AwaitingApproval: validated remediation plan
+    AwaitingApproval --> Cancelled: user cancels
+    AwaitingApproval --> Approved: user approves exact plan
+    Approved --> Isolated: clean tree + worktree
+    Isolated --> DependencyUpdated: exact npm update
+    DependencyUpdated --> Repaired: bounded source repair passes
+    DependencyUpdated --> Stopped: repair stops or fails twice
+    Repaired --> TargetedTestPassed: one safe test passes
+    Repaired --> Stopped: test generation or command fails
+    TargetedTestPassed --> Verified: baseline/post-patch checks + clean rescan
+    TargetedTestPassed --> Failed: deterministic verification fails
+    Verified --> Reported: Markdown + JSON evidence
+    Reported --> LocalCommitReady: exact local commit + PR copy
+    Cancelled --> [*]
+    Stopped --> [*]
+    Failed --> [*]
+    LocalCommitReady --> [*]
+```
 
-## Implemented M3 approval boundary
+Server stores are intentionally in-memory and single-session. Restarting the service loses workflow objects, although ignored local worktrees and audit files remain until reset or cleanup.
 
-- The remediation planner receives only the validated finding, affectedness assessment, package metadata, evidence-backed excerpts, test structure, and explicit file/command allowlists.
-- GPT‑5.6 returns a strict `RemediationPlan`; the cached fallback uses the same schema and is visibly labeled. Post-schema validation restricts the target to supplied fixed versions and every file/command to the input allowlist.
-- Every plan requires human approval and includes target version, strategy, explanation, expected files, compatibility risks, proposed commands, and verification intent.
-- A plan ID is the SHA-256 digest of the exact validated plan. Approval records bind a decision and timestamp to that ID; tampered, missing, awaiting, or cancelled proposals fail the reusable write gate.
-- Approval state is intentionally in-memory for the single demo session. Restarting the server clears it.
-- `POST /api/demo/remediation-plan` is read-only. `POST /api/demo/remediation-decision` records `approved` or `cancelled`; neither endpoint creates a worktree or modifies the target repository.
+## Trust boundaries
 
-## Implemented M3 isolation boundary
+| Boundary | Accepted input | Enforcement | Output classification |
+| --- | --- | --- | --- |
+| Browser → orchestrator | Known demo endpoints and schema-bound IDs/decisions | JSON size limit and Zod request parsing | User intent or workflow request |
+| Repository → evidence | Bounded JS/TS/JSON files, package metadata, exact excerpts | Canonical paths, symlink/size/file-count exclusions, repository-relative references | Deterministic fact |
+| Advisory → model | Normalized advisory fields without proof-of-concept sections | Dedicated schema, matching ID, cached provenance | Deterministic fact |
+| Evidence → GPT‑5.6 | Only stage-specific compact context | Strict context builders, no absolute paths or arbitrary scanner/log dumps | Model input |
+| GPT‑5.6 → executor | Structured assessment/plan/replacement/test proposal | Zod plus semantic allowlists and citation validation | Interpretation or proposal |
+| User → patch executor | Exact plan decision | SHA-256 plan ID and immutable approval/cancel state | Human decision |
+| Executor → filesystem | Fixed files and fixed command families | Canonical containment, clean-state checks, exact diff checkpoints, time/output limits | Deterministic action/result |
+| Verification → report | Accepted plan/run chain and retained diffs | Plan/run identity, cited-line revalidation, selected-advisory state | Deterministic composition |
+| Local handoff → remote | Nothing in bundled demo | No remote configured; state fixed to `not_requested` | No external side effect |
 
-- `POST /api/demo/isolate` accepts only a known plan ID whose exact validated content has an `approved` record. Awaiting, cancelled, tampered, missing, and expired plans fail before filesystem mutation.
-- The executor resolves the selected repository and Git root canonically inside the configured project boundary. Worktree, isolated-repository, and audit paths must also remain inside explicitly configured run roots.
-- A full porcelain Git status rejects tracked or untracked source changes with an actionable message before run directories, branches, or worktrees are created.
-- The baseline commit and source branch are captured before `git worktree add -b` creates a unique `patchpilot/run-*` branch and separate worktree. Git is invoked directly without a shell, with timeout and output bounds.
-- The selected demo subdirectory is mapped to the same repository-relative location inside the new worktree. Baseline commit and branch are verified from the worktree before it is marked ready.
-- A validated JSON audit record stores approval, clean-state fact, baseline, paths, branch, and six ordered lifecycle events under ignored `runs/audit/`. No dependency or source change occurs in Issue #8.
+## Scanner adapter
 
-## Implemented M3 dependency-update boundary
+`apps/server/src/scanning/osvScanner.ts` resolves the repository and requires both `package.json` and `package-lock.json`. It invokes OSV-Scanner directly with an argument array, a 30-second timeout, and a 5 MiB output cap.
 
-- `POST /api/demo/dependency-update` requires the same approved plan and a ready in-memory isolation run. The plan must contain the exact `npm install json5@1.0.2 --save-exact` command.
-- Before execution, the service rechecks the isolated branch, baseline commit, clean worktree, canonical paths, and unchanged source checkout.
-- npm runs directly without a shell inside the isolated repository, with a 60-second timeout and 512 KiB process-output cap. Returned stdout/stderr are bounded to 32 KiB each.
-- The executor snapshots `package.json` and `package-lock.json`, then requires json5 to reach the planned version in the manifest, lockfile root, and locked package entry.
-- Parsed manifest and lockfile copies with only json5 removed must remain structurally identical. Git must report exactly `package.json` and `package-lock.json` as changed.
-- The complete dependency diff, bounded command result, version proof, and clean-source fact are validated and written to a separate ignored JSON artifact. Compatibility repair, tests, build, rescan, and branch commit do not run in Issue #9.
+The adapter handles OSV-Scanner’s exit semantics deliberately:
 
-## Implemented M3 compatibility-repair boundary
+- exit `0`: parse valid JSON, including a clean result;
+- exit `1`: accept only when stdout contains valid finding JSON;
+- any other execution result or malformed JSON: fail the scan.
 
-- `POST /api/demo/compatibility-repair` requires the same approved plan, ready isolation run, and recorded successful dependency update from the active server session. Run and plan IDs must agree.
-- Before a source write, the executor rechecks canonical paths, isolated branch and baseline, clean source checkout, the exact two-file dependency checkpoint, and byte-for-byte equality with the recorded dependency diff.
-- GPT‑5.6 receives exactly six bounded context groups: attempt number, approved plan facts, dependency-update facts, the extracted `parseUserTheme` function, an optional relevant previous syntax failure, and fixed constraints. The checked-in fallback is explicitly labeled and passes the same schema and semantic validator.
-- Validation permits only one exact replacement of `parseUserTheme` in `src/theme.js`. It requires the existing signature, `JSON5.parse(rawTheme)`, explicit `accent` and `density` handling with defaults, and rejects imports, dependency changes, commands, broad object spreads, and other unsafe constructs.
-- Each applied attempt runs only `node --check src/theme.js` without a shell. A retry receives only bounded, redacted source-path/caret/`SyntaxError` lines. The loop stops after two failures and restores the original source; an exception after mutation also restores it.
-- A successful run retains exactly `package-lock.json`, `package.json`, and `src/theme.js`, plus the source diff and attempt/probe audit in ignored run storage. No test generation, full suite/build, rescan, commit, or push runs in Issue #10.
+`normalizeOsvOutput` converts only npm findings into PatchPilot’s strict contract. The scanner version is recorded. The setup script pins `2.3.8` and verifies the upstream SHA-256 checksum before installing under ignored `tools/bin/`.
 
-## Implemented M3 targeted-test boundary
+The post-patch rescan is lockfile-scoped because OSV-Scanner directory discovery ignores Git worktree roots:
 
-- `POST /api/demo/targeted-test` requires the same approved plan, ready isolation run, dependency result, and passing compatibility-repair result from the active server session. All plan/run identities must agree.
-- Before a test-file write, the executor rechecks canonical paths, branch, baseline, source cleanliness, the exact repaired three-file checkpoint, and byte-for-byte equality with the recorded dependency and source diffs.
-- GPT‑5.6 receives exactly six bounded groups: approved test intent, dependency facts, repair status, the repaired `parseUserTheme` function, the existing test file, and fixed constraints. The explicit cached fixture passes the same strict schema and semantic validator.
-- Validation permits exactly one `it(...)` block in `test/theme.test.js` before the final suite close. It requires a benign `previewLabel: ignored` input, supported `accent`/`density` assertions, and absence proof via `Object.hasOwn`; prototype-related keys, exploit payloads, imports, commands, processes, and multiple tests fail closed.
-- The executor runs only `node --test test/theme.test.js` without a shell under timeout/output limits. Exit 0 retains the four-file diff; any failed command restores the original test file and records the failure honestly.
-- The result artifact retains model provenance, safety rationale, uncertainty, exact test diff, bounded command facts, and source-clean state. No full suite, build, rescan, commit, push, or report runs in Issue #11.
+```text
+osv-scanner scan source --lockfile package-lock.json --format json --verbosity error
+```
 
-## Implemented M3 verification boundary
+## Advisory and repository evidence
 
-- `POST /api/demo/verification` requires the same approved plan and accepted isolation, dependency, compatibility-repair, and targeted-test results from the active server session. Every plan/run identity must agree.
-- Before commands run, the executor revalidates canonical paths, branch, baseline commit, clean source checkout, the exact four changed files, and byte-for-byte equality with all three recorded patch diffs.
-- Baseline runs `npm ci --ignore-scripts`, `npm test`, and `npm run build` against the clean vulnerable source checkout. Post-patch runs the same install, the exact targeted test, the full test command, and build against the isolated worktree. Commands run without a shell under time/output limits.
-- OSV-Scanner directory discovery ignores Git worktrees, so the rescan uses the narrower validated command `osv-scanner scan source --lockfile package-lock.json --format json --verbosity error`. Its raw exit semantics and normalized npm findings are retained.
-- Each command records its phase, kind, exact command, raw exit code, duration, bounded/redacted stdout/stderr summary, truncation state, and one of `passed`, `failed`, or `findings_present`.
-- Verification stops on the first failed deterministic command. Failures are classified by exact stage; an unusable rescan and a rescan that still contains `GHSA-9c47-m6qq-7p4h` are distinct terminal failures.
-- A verified result requires all seven install/test/build commands to pass, a usable OSV rescan with the selected advisory absent, the original four-file diff intact, and the source checkout clean. Reporting, commit, push, and merge remain outside Issue #12.
+The advisory service normalizes live OSV data into identity, aliases, summary, details, severity, ranges, fixes, affected functions, references, and provenance. A checked-in advisory is used when live enrichment is absent or unusable and is always labeled `cached-demo`.
 
-## Implemented M3 reporting boundary
+The repository collector searches a bounded set of JavaScript, TypeScript, and JSON source files. It skips dependencies, Git data, build output, lockfiles, oversized files, and symlinks. Evidence uses stable IDs, repository-relative paths, positive line ranges, compact excerpts, and factual explanations. Absence evidence explicitly says that a missed reference is not proof of non-applicability.
 
-- `POST /api/demo/report` accepts only the active approved plan/run chain after dependency update, retained source repair, retained targeted test, and deterministic verification. Every plan and run ID must agree.
-- Before generation, each positioned evidence item must use a searched repository-relative file and its stored line excerpt must still match the unchanged vulnerable source exactly. Every assessment citation must resolve to an included unique evidence ID.
-- The JSON contract separates `deterministicFacts`, `modelInterpretation`, `humanDecision`, `uncertainty`, and `finalStatus`. The Markdown renderer repeats those trust labels in every relevant heading.
-- The report contains the original finding, cited evidence, affectedness assessment, approval, approved plan, exact dependency/source/test diffs, changed files, eight bounded command facts, normalized rescan, remaining uncertainty, and final status.
-- Markdown and JSON are written with owner-only permissions under ignored `runs/audit/` paths. Returned paths are repository-relative; the report excludes absolute local paths. Session-bound `GET` routes serve each artifact as a no-store attachment.
-- Reporting is deterministic composition only. It does not make a new model call, mutate the source or isolated patch, commit, push, publish, certify compliance, or claim that the repository is secure.
+Before reporting, every positioned excerpt is read again from the unchanged source and must still match the stored file/line range.
 
-## Implemented M4 Git handoff boundary
+## Model context construction
 
-- `POST /api/demo/github-handoff` accepts only the active verified report and matching isolated run. Plan/run identity, human approval, verified status, and selected-advisory absence must all agree.
-- Before staging, the executor canonically revalidates the source Git root, isolated worktree and repository, exact `patchpilot/run-*` branch, unchanged baseline HEAD, clean source checkout, and exactly four approved changed files.
-- Git stages only `package-lock.json`, `package.json`, `src/theme.js`, and `test/theme.test.js`. Hooks and signing are disabled for the deterministic local commit, which uses the fixed clear message `fix: remediate GHSA-9c47-m6qq-7p4h in json5`.
-- After commit, the executor requires a direct parent relationship to the verified baseline, the exact four-file commit, the same branch, a clean isolated worktree, and a still-clean source checkout.
-- Draft-PR copy deterministically summarizes the dependency change, approval, eight command facts, normalized rescan, model provenance, Codex contribution, remaining limitations, and repository-relative report artifacts. It excludes absolute local paths.
-- The bundled repository has no publication remote. The returned state is explicitly `not_requested`, requires separate approval, and runs no push, pull-request, or merge command. An owner-only handoff audit is written under ignored `runs/audit/` storage.
+GPT‑5.6 is used only through the Responses API with `store: false`, medium reasoning effort, low verbosity, and Zod-backed Structured Outputs. Each role has a distinct minimal context:
+
+| Role | Context admitted | Semantic validation |
+| --- | --- | --- |
+| Affectedness | Normalized advisory, package relationship, repository metadata, bounded evidence | Known unique evidence IDs, no absence-as-support, verdict must agree with deterministic call-site facts |
+| Remediation plan | Finding, assessment, package metadata, cited excerpts, test structure, file/command allowlists | Supplied fixed version only; known files/commands only; human approval always required |
+| Compatibility repair | Approved facts, dependency result, exact `parseUserTheme` function, optional filtered syntax failure | One exact function replacement; required parse and supported fields; no imports, commands, dependencies, broad spreads, or dynamic execution |
+| Targeted test | Approved intent, patch facts, repaired function, bounded existing test file | Exactly one benign test; no prototype keys/payloads, imports, process/network access, or extra commands |
+
+If `OPENAI_API_KEY` is absent, checked-in `cached-demo` outputs pass through the same schemas and semantic validators. They are never labeled as live responses.
+
+## Approval and patch isolation
+
+The remediation plan is validated before display. Its canonical content is hashed into `plan-<sha256>`. The user can approve or cancel that exact ID; the decision is immutable, and any plan-content change invalidates the approval.
+
+Isolation then:
+
+1. checks approval before the first possible write;
+2. canonicalizes the project, Git root, worktree root, and audit root;
+3. requires a clean source worktree including untracked files;
+4. records the source branch and baseline commit;
+5. creates `patchpilot/run-<uuid>` in `runs/worktrees/`;
+6. verifies branch, baseline, mapped repository path, and clean source state;
+7. writes an ordered owner-local audit artifact.
+
+Every later stage revalidates the same run/plan identity, branch, baseline, source cleanliness, exact changed-file set, and the bytes of prior retained diffs.
+
+## Mutation stages
+
+The patch is deliberately four files:
+
+| Stage | Allowed change | Deterministic checkpoint |
+| --- | --- | --- |
+| Dependency update | `package.json`, `package-lock.json` | json5 is exactly `1.0.2` in manifest and lockfile; all unrelated dependency structure is unchanged |
+| Compatibility repair | `src/theme.js` | Only `parseUserTheme` replacement; `node --check src/theme.js` passes; at most two attempts |
+| Targeted test | `test/theme.test.js` | Exactly one benign test; `node --test test/theme.test.js` passes; failed test is restored |
+
+The model proposes source/test text but cannot widen the file or command boundary. Mutation-time exceptions restore the current stage where designed, and terminal stops make no later verification claim.
+
+## Verification flow
+
+Verification first confirms the approved four-file diff is intact. It then records eight ordered command facts:
+
+```text
+baseline     npm ci --ignore-scripts
+baseline     npm test
+baseline     npm run build
+post-patch   npm ci --ignore-scripts
+post-patch   node --test test/theme.test.js
+post-patch   npm test
+post-patch   npm run build
+rescan       osv-scanner scan source --lockfile package-lock.json --format json --verbosity error
+```
+
+Each record includes phase, kind, displayed command, raw exit code, duration, bounded/redacted stdout/stderr summaries, truncation state, and normalized status. A failed install/test/build stops later commands. Scanner execution failure and continued presence of the selected advisory are distinct terminal classifications.
+
+`verified` requires all seven install/test/build commands to pass, a usable rescan with `GHSA-9c47-m6qq-7p4h` absent, the exact patch still present, and the source checkout still clean.
+
+## Report generation
+
+The report generator is deterministic composition; it makes no model call. It binds the original finding, repository evidence, affectedness interpretation, human approval, remediation plan, dependency/source/test diffs, eight command facts, normalized rescan, uncertainty, and final status to one plan/run identity.
+
+Artifacts are written with owner-only permissions:
+
+```text
+runs/audit/run-<uuid>-report.md
+runs/audit/run-<uuid>-report.json
+```
+
+The Markdown repeats trust labels in headings. The JSON separates `deterministicFacts`, `modelInterpretation`, `humanDecision`, `uncertainty`, and `finalStatus`. Returned references are repository-relative and exclude absolute local paths.
+
+## Local Git handoff
+
+After a verified report, the handoff revalidates the branch, direct baseline parent, source cleanliness, and exact four-file diff. It stages only those files and creates:
+
+```text
+fix: remediate GHSA-9c47-m6qq-7p4h in json5
+```
+
+Git hooks and signing are disabled for this deterministic local demo commit. The resulting branch, parent, message, file set, and clean worktrees are verified again. PR-ready copy summarizes tests, rescan, model/Codex provenance, limitations, and report paths without exposing absolute local paths.
+
+The nested demo repository has no remote. The handoff contract therefore returns `not_requested` and requires separate approval plus target configuration before any push or draft PR. No remote publication endpoint or merge path exists.
+
+## Artifact and state lifecycle
+
+- Source fixture: nested Git repository, reset to the `vulnerable` tag by `demo/reset-demo.sh`.
+- Session state: in-memory stores keyed by plan/run ID; intentionally lost on restart.
+- Worktrees: ignored under `runs/worktrees/`.
+- Audit and report files: ignored under `runs/audit/`, owner-local where created by PatchPilot.
+- Cached model/advisory fixtures: checked in under `demo/expected/` and `demo/cached-advisories/` with explicit provenance.
+- Remote systems: OSV data and optional OpenAI Responses API only; no repository publication.
+
+## Design consequences
+
+The architecture favors a reliable, inspectable hackathon proof over breadth. It is strong for the single golden path because every transition has exact inputs and checkpoints. The same hard-coded boundaries mean it is not generic local-repository support. See [Security model](security-model.md), [Testing strategy](testing-strategy.md), [Known limitations](limitations.md), and [Roadmap](roadmap.md).

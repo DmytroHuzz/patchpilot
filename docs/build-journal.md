@@ -189,3 +189,16 @@
 - Browser acceptance completed all ten stages on `run-0f784d19-c07a-4d69-98f7-b7d999c3acd9`. The final UI showed local commit `8622bfab0981`, direct parent `d76259ff736e`, the fixed message, four exact files, full PR copy, successful copy-state feedback, and `LOCKED · NOT REQUESTED`; browser logs were clean.
 - CLI inspection confirmed the source checkout remained clean on `main`, the isolated branch and worktree were clean, the commit contains exactly four files, the audit matches the UI, and the bundled repository has no remote. No push, pull-request, merge, deployment, or scope expansion occurred.
 - Scope expansions: none.
+
+## 2026-07-18 — Issue 15: judge-ready README and architecture documentation
+
+- Acceptance target: verify clean-clone instructions, include every specification-required README section, and make diagrams and safety language match implemented behavior.
+- Rewrote the README around the complete golden path with the product problem, two real UI screenshots, architecture, OSV reuse, PatchPilot additions, observed golden-run metrics, supported environment, installation, variables, exact demo clicks, testing, safety, limitations, hackathon context, Codex/GPT-5.6 roles, acknowledgements, and roadmap.
+- Documented the implemented component graph, workflow state machine, trust boundaries, scanner adapter, bounded model context, approval/isolation flow, exact mutation checkpoints, verification, reporting, and local Git handoff.
+- Expanded the security model with the exact executable/argument families, repository and path restrictions, approval semantics, output bounds/redaction, deterministic verification claims, and residual risks. The docs explicitly state that a clean rescan is not a general security guarantee.
+- Added a documentation contract that requires the 20 README requirements, architecture/security sections, both screenshots, and valid local links. It runs first in `npm run check` and CI.
+- Captured the actual 1280×720 investigation and local-handoff screens. The capture API produced JPEG bytes despite the initial PNG filenames; the assets and references were corrected to `.jpg` before acceptance.
+- Arbitrary local-repository onboarding is honestly documented as unsupported because the server and mutation contracts are intentionally hard-wired to the bundled golden fixture. No product feature was added to disguise that boundary.
+- Exact-snapshot clean-clone acceptance passed on candidate commit `c9367b524f08`: `npm ci`, the documentation contract, typechecks, all 62 tests, production builds, verified OSV-Scanner 2.3.8 setup, clean nested-fixture reset, baseline tests/build, and the live expected `GHSA-9c47-m6qq-7p4h` finding all passed.
+- Public repository hygiene passed with no internal-planning tool references. The main Codex task ID remains recorded for the submission `/feedback` requirement.
+- Scope expansions: none. Production operations, arbitrary repositories, publication, extra ecosystems, dashboards, monitoring, SBOMs, and submission/demo-script work remain out of this issue.

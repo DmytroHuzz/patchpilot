@@ -1,6 +1,33 @@
 # Testing strategy
 
-Tests will progress with the milestones: schema/normalizer unit tests and a live/cached scanner integration test in M1; evidence and AI contract tests in M2; worktree, patch, verification, rescan, and report tests in M3; critical UI smoke coverage in M4.
+PatchPilot separates network-independent correctness checks, live golden-fixture smoke checks, and browser acceptance. A passing unit suite does not substitute for the real scanner/rescan path; a passing golden path does not claim general security effectiveness.
+
+## Commands
+
+```bash
+npm run check              # documentation contract, typecheck, 62 tests, production builds
+./scripts/verify-demo.sh   # reset + fixture install/tests/build + real OSV scan
+./demo/run-demo.sh         # reset and launch the complete interactive path
+```
+
+`npm run check` is the required CI check and does not require network after `npm ci`. `verify-demo.sh` downloads or queries OSV data and is the separate Demo smoke job.
+
+## Current verification matrix
+
+| Layer | What it proves | Network |
+| --- | --- | --- |
+| Documentation contract | All 20 required README sections exist, local Markdown links resolve, screenshots exist, and public files contain no internal-planning reference | No |
+| Contracts/unit tests | Raw/normalized schemas, citation rules, model semantics, approval invariants, scanner exit behavior | No |
+| Real temporary-Git integration | Dirty-tree stops, canonical containment, exact diffs, restoration, command order, commit parent/file boundaries | No |
+| Production builds | Server TypeScript and React/Vite bundles compile | No |
+| Demo smoke | Clean fixture reset, baseline fixture tests/build, real OSV-Scanner finding | Yes |
+| Manual browser acceptance | Complete visible workflow, terminal facts, downloads/copy controls, clean browser logs | OSV; OpenAI optional |
+
+The clean-clone acceptance for Issue #15 runs root install/check and live demo verification from a separate clone, not from the development working tree.
+
+## Implemented coverage by milestone
+
+Tests progressed from schema/normalizer and scanner coverage in M1; through evidence and AI contracts in M2; into worktree, patch, verification, rescan, and report integration in M3; and critical UI/handoff acceptance in M4.
 
 M1 currently includes contract validation tests, golden normalizer tests, malformed-output rejection, a clean-reset live scanner smoke script, fixture tests/build checks, and a manual browser click-path verification. The live smoke requires network access to OSV; unit tests do not.
 
