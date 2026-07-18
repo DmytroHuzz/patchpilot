@@ -4,7 +4,7 @@ PatchPilot investigates a known npm dependency vulnerability, proposes the small
 
 [GitHub repository](https://github.com/DmytroHuzz/patchpilot)
 
-> Milestone 3 in progress: detection and investigation are complete; an exact-plan approval now gates creation of a clean, boundary-contained Git branch and worktree before any patch write.
+> Milestone 3 in progress: an exact-plan approval now gates a clean isolated worktree, and the approved minimal json5 update is applied there with a preserved dependency-only diff.
 
 ## Golden workflow
 
@@ -41,7 +41,7 @@ npm run demo
 
 Alternatively, `./demo/run-demo.sh` performs the fixture reset, install, baseline checks, scanner setup, and UI launch in one command.
 
-Open `http://127.0.0.1:4173`, choose **Run deterministic scan**, **Investigate affectedness**, and **Review remediation plan**. Approve the exact plan, then choose **Create isolated workspace**. The expected result is `GHSA-9c47-m6qq-7p4h` in direct dependency `json5@1.0.1`, evidence at `src/theme.js:1` and `src/theme.js:8–10`, a `likely affected` interpretation, a plan targeting `json5@1.0.2`, and a clean `patchpilot/run-*` branch in a separate worktree.
+Open `http://127.0.0.1:4173`, choose **Run deterministic scan**, **Investigate affectedness**, and **Review remediation plan**. Approve the exact plan, choose **Create isolated workspace**, then **Apply approved dependency update**. The expected result is `GHSA-9c47-m6qq-7p4h` in direct dependency `json5@1.0.1`, evidence at `src/theme.js:1` and `src/theme.js:8–10`, a `likely affected` interpretation, and an isolated dependency-only diff that moves both manifest and lockfile to `json5@1.0.2` without changing the source checkout.
 
 Without `OPENAI_API_KEY`, the demo uses an explicitly labeled, checked-in GPT‑5.6 contract fixture. With the key set, the same endpoint calls `gpt-5.6` through the OpenAI Responses API and validates its Structured Output. To inspect the complete JSON result directly:
 
@@ -55,7 +55,7 @@ To generate and validate the read-only remediation proposal without opening the 
 npm run plan:demo
 ```
 
-The proposal remains `awaiting_approval`. Approval and cancellation are recorded only in server memory for the current demo run. After approval, isolation records baseline, branch, worktree, validated paths, and an ignored audit artifact under `runs/`; dependency and source patching remain separate later issues.
+The proposal remains `awaiting_approval`. Approval and cancellation are recorded only in server memory for the current demo run. After approval, isolation records baseline, branch, worktree, and validated paths. The dependency step executes only the displayed npm command, preserves its result and complete dependency diff under ignored `runs/`, and stops before compatibility repair, tests, or rescan.
 
 The setup script verifies the official release checksum. Set `OSV_SCANNER_PATH` to use an existing compatible scanner binary instead.
 

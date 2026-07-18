@@ -34,7 +34,7 @@ export function resolveInsideBoundary(boundary: string, candidate: string, label
   return resolvedCandidate;
 }
 
-async function canonicalExistingPath(boundary: string, candidate: string, label: string): Promise<string> {
+export async function canonicalExistingPath(boundary: string, candidate: string, label: string): Promise<string> {
   const canonicalBoundary = await realpath(boundary);
   const canonical = await realpath(path.resolve(candidate));
   if (!isInside(canonicalBoundary, canonical)) {
@@ -58,17 +58,23 @@ function event(sequence: number, at: string, action: IsolationAuditEvent["action
 
 export class IsolationRunStore {
   readonly #runsByPlan = new Map<string, IsolationRun>();
+  readonly #runsById = new Map<string, IsolationRun>();
 
   register(run: IsolationRun): IsolationRun {
     const validated = IsolationRunSchema.parse(run);
     const existing = this.#runsByPlan.get(validated.planId);
     if (existing) return existing;
     this.#runsByPlan.set(validated.planId, validated);
+    this.#runsById.set(validated.id, validated);
     return validated;
   }
 
   getByPlan(planId: string): IsolationRun | undefined {
     return this.#runsByPlan.get(planId);
+  }
+
+  getById(runId: string): IsolationRun | undefined {
+    return this.#runsById.get(runId);
   }
 }
 

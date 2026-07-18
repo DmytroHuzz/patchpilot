@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { createRoot } from "react-dom/client";
 import type {
+  DependencyUpdateResult,
   IsolationRun,
   InvestigationResult,
   NormalizedScanResult,
@@ -8,7 +9,7 @@ import type {
 } from "@patchpilot/contracts";
 import "./styles.css";
 
-type Status = "ready" | "scanning" | "investigating" | "planning" | "deciding" | "isolating" | "error";
+type Status = "ready" | "scanning" | "investigating" | "planning" | "deciding" | "isolating" | "updating" | "error";
 
 function sentenceCase(value: string): string {
   return value.replaceAll("_", " ");
@@ -19,6 +20,7 @@ function App() {
   const [investigation, setInvestigation] = useState<InvestigationResult>();
   const [proposal, setProposal] = useState<RemediationProposal>();
   const [isolation, setIsolation] = useState<IsolationRun>();
+  const [dependencyUpdate, setDependencyUpdate] = useState<DependencyUpdateResult>();
   const [status, setStatus] = useState<Status>("ready");
   const [error, setError] = useState("");
 
@@ -41,6 +43,7 @@ function App() {
     setInvestigation(undefined);
     setProposal(undefined);
     setIsolation(undefined);
+    setDependencyUpdate(undefined);
     try {
       setResult(await post<NormalizedScanResult>("/api/demo/scan"));
       setStatus("ready");
@@ -55,6 +58,7 @@ function App() {
     setError("");
     setProposal(undefined);
     setIsolation(undefined);
+    setDependencyUpdate(undefined);
     try {
       setInvestigation(await post<InvestigationResult>("/api/demo/investigate"));
       setStatus("ready");
@@ -105,6 +109,22 @@ function App() {
     }
   }
 
+  async function applyDependencyUpdate() {
+    if (!proposal || !isolation) return;
+    setStatus("updating");
+    setError("");
+    try {
+      setDependencyUpdate(await post<DependencyUpdateResult>("/api/demo/dependency-update", {
+        planId: proposal.id,
+        runId: isolation.id,
+      }));
+      setStatus("ready");
+    } catch (updateError) {
+      setError(updateError instanceof Error ? updateError.message : "Dependency update failed");
+      setStatus("error");
+    }
+  }
+
   const finding = result?.findings.find(({ id }) => id === "GHSA-9c47-m6qq-7p4h");
   const assessment = investigation?.assessmentRun.assessment;
   const assessmentSource = investigation?.assessmentRun.source;
@@ -114,8 +134,8 @@ function App() {
     <div className="shell">
       <header>
         <span className="mark">P</span><strong>PatchPilot</strong>
-        <nav><span className="active">01 Detect</span><span className={finding ? "active" : ""}>02 Investigate</span><span className={proposal ? "active" : ""}>03 Approve</span><span className={isolation ? "active" : ""}>04 Isolate</span></nav>
-        <span className="stage">M3 / ISOLATED EXECUTION</span>
+        <nav><span className="active">01 Detect</span><span className={finding ? "active" : ""}>02 Investigate</span><span className={proposal ? "active" : ""}>03 Approve</span><span className={isolation ? "active" : ""}>04 Isolate</span><span className={dependencyUpdate ? "active" : ""}>05 Update</span></nav>
+        <span className="stage">M3 / DEPENDENCY PATCH</span>
       </header>
       <main>
         <section className="hero">
@@ -129,7 +149,7 @@ function App() {
             <h2>patchpilot-golden-demo</h2>
             <p>Node.js · npm · direct dependency</p>
             <code>demo/vulnerable-node-app</code>
-            <button onClick={scanDemo} disabled={["scanning", "investigating", "planning", "deciding", "isolating"].includes(status)}>
+            <button onClick={scanDemo} disabled={["scanning", "investigating", "planning", "deciding", "isolating", "updating"].includes(status)}>
               {status === "scanning" ? "Scanning with OSV…" : "Run deterministic scan"}<span>→</span>
             </button>
             {error && <p className="error">{error}</p>}
@@ -326,6 +346,55 @@ function App() {
             <div className="ready-icon">◇</div>
             <div><strong>No patch has been applied.</strong><span>All future writes are constrained to the isolated repository. Automatic push and merge remain disabled.</span></div>
             <code>{isolation.id}</code>
+          </div>
+          {!dependencyUpdate && <div className="dependency-launch">
+            <div><strong>Isolation boundary passed.</strong><span>Run the one approved npm command. Only package.json and package-lock.json may change.</span></div>
+            <button onClick={applyDependencyUpdate} disabled={status === "updating"}>
+              {status === "updating" ? "Applying json5 1.0.2…" : "Apply approved dependency update"}<span>→</span>
+            </button>
+          </div>}
+          {error && <div className="decision-error">{error}</div>}
+        </section>}
+
+        {dependencyUpdate && <section className="dependency-update" aria-live="polite">
+          <div className="dependency-title">
+            <div><p className="eyebrow">05 · APPROVED DEPENDENCY UPDATE</p><h2>Minimal version. Reviewable diff.</h2></div>
+            <div className="dependency-badge"><span>✓ SOURCE CHECKOUT CLEAN</span><strong>DEPENDENCY ONLY</strong></div>
+          </div>
+
+          <div className="dependency-facts">
+            <div><span>PACKAGE</span><strong>{dependencyUpdate.packageName}</strong></div>
+            <div><span>VERSION</span><strong>{dependencyUpdate.fromVersion} <em>→</em> {dependencyUpdate.targetVersion}</strong></div>
+            <div><span>CHANGED FILES</span><strong>{dependencyUpdate.changedFiles.length}</strong></div>
+            <div><span>UNRELATED CHANGES</span><strong className="zero">0</strong></div>
+          </div>
+
+          <div className="command-proof">
+            <p className="panel-label"><span>$</span> APPROVED COMMAND RESULT</p>
+            <code>$ {dependencyUpdate.commandResult.command}</code>
+            <div><span>EXIT {dependencyUpdate.commandResult.exitCode}</span><span>{dependencyUpdate.commandResult.durationMs} MS</span><span>{dependencyUpdate.commandResult.outputTruncated ? "OUTPUT BOUNDED" : "OUTPUT COMPLETE"}</span></div>
+            {dependencyUpdate.commandResult.stdout && <pre>{dependencyUpdate.commandResult.stdout}</pre>}
+          </div>
+
+          <div className="dependency-grid">
+            <article>
+              <p className="panel-label"><span>01</span> VERSION PROOF</p>
+              <dl>
+                <div><dt>package.json</dt><dd>{dependencyUpdate.packageName} {dependencyUpdate.manifestVersion}</dd></div>
+                <div><dt>package-lock.json</dt><dd>{dependencyUpdate.packageName} {dependencyUpdate.lockfileVersion}</dd></div>
+              </dl>
+              <div className="changed-file-list">{dependencyUpdate.changedFiles.map((file) => <code key={file}>◇ {file}</code>)}</div>
+            </article>
+            <article className="diff-panel">
+              <p className="panel-label"><span>02</span> PRESERVED DEPENDENCY DIFF</p>
+              <pre>{dependencyUpdate.diff}</pre>
+            </article>
+          </div>
+
+          <div className="dependency-checkpoint">
+            <div className="ready-icon">✓</div>
+            <div><strong>Dependency checkpoint complete.</strong><span>json5 reached the approved fix in both files. Source compatibility repair and regression testing are the next separately reviewed steps.</span></div>
+            <code>{dependencyUpdate.completedAt}</code>
           </div>
         </section>}
       </main>

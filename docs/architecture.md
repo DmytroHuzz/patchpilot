@@ -56,3 +56,12 @@ OSV and command output are deterministic facts. There is no model call or interp
 - The baseline commit and source branch are captured before `git worktree add -b` creates a unique `patchpilot/run-*` branch and separate worktree. Git is invoked directly without a shell, with timeout and output bounds.
 - The selected demo subdirectory is mapped to the same repository-relative location inside the new worktree. Baseline commit and branch are verified from the worktree before it is marked ready.
 - A validated JSON audit record stores approval, clean-state fact, baseline, paths, branch, and six ordered lifecycle events under ignored `runs/audit/`. No dependency or source change occurs in Issue #8.
+
+## Implemented M3 dependency-update boundary
+
+- `POST /api/demo/dependency-update` requires the same approved plan and a ready in-memory isolation run. The plan must contain the exact `npm install json5@1.0.2 --save-exact` command.
+- Before execution, the service rechecks the isolated branch, baseline commit, clean worktree, canonical paths, and unchanged source checkout.
+- npm runs directly without a shell inside the isolated repository, with a 60-second timeout and 512 KiB process-output cap. Returned stdout/stderr are bounded to 32 KiB each.
+- The executor snapshots `package.json` and `package-lock.json`, then requires json5 to reach the planned version in the manifest, lockfile root, and locked package entry.
+- Parsed manifest and lockfile copies with only json5 removed must remain structurally identical. Git must report exactly `package.json` and `package-lock.json` as changed.
+- The complete dependency diff, bounded command result, version proof, and clean-source fact are validated and written to a separate ignored JSON artifact. Compatibility repair, tests, build, rescan, and branch commit do not run in Issue #9.

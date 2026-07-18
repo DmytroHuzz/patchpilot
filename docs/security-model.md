@@ -18,3 +18,11 @@ PatchPilot will operate only inside a validated repository or isolated worktree,
 - Git commands use argument arrays rather than a shell and have a 10-second timeout and 1 MiB output cap.
 - A unique local `patchpilot/run-*` branch is created at the recorded baseline in a separate worktree. The source checkout remains on its original branch and commit.
 - Audit artifacts live in ignored run storage. No automatic push, merge, dependency update, or source edit occurs in Issue #8.
+
+## Implemented dependency-mutation controls
+
+- The exact plan approval, isolation run ID, branch, baseline, and clean state are revalidated before npm executes.
+- The command is constructed from the fixed npm executable, fixed `install`/`--save-exact` arguments, literal json5 package, and approved target version. No shell or model-provided free-form command is used.
+- Manifest and lockfile JSON are size-bounded and parsed before and after the command. All non-json5 dependency content must remain structurally unchanged.
+- Git must report exactly the two approved dependency files. Source changes, extra files, unrelated dependency movement, mismatched versions, empty/oversized diffs, or a changed source checkout fail closed.
+- Command output and the complete review diff are bounded and retained in ignored run storage. No automatic commit, push, merge, compatibility edit, test, or security claim occurs in Issue #9.

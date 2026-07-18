@@ -8,4 +8,5 @@
 - Affectedness is bounded static interpretation, not proof of runtime reachability or exploitability.
 - Remediation-plan approvals are in-memory and single-session; restarting the server clears the record.
 - Isolation state is in-memory for the active server, while its branch, worktree, and ignored JSON audit artifact remain local until a later patch run or explicit cleanup.
-- The current isolation screen performs no dependency update or source patch. Automatic push and merge remain disabled.
+- The dependency step currently supports only the golden direct dependency `json5` and the exact approved version command.
+- The current flow stops after the dependency-only diff. Compatibility repair, targeted tests, build, rescan, commit, automatic push, and merge remain later or explicitly excluded steps.

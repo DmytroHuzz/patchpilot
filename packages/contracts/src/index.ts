@@ -216,6 +216,49 @@ export const IsolationRequestSchema = z.object({
 
 export type IsolationRequest = z.infer<typeof IsolationRequestSchema>;
 
+export const DependencyCommandResultSchema = z.object({
+  command: z.string().min(1),
+  exitCode: z.literal(0),
+  durationMs: z.number().int().nonnegative(),
+  stdout: z.string().max(32 * 1024),
+  stderr: z.string().max(32 * 1024),
+  outputTruncated: z.boolean(),
+}).strict();
+
+export type DependencyCommandResult = z.infer<typeof DependencyCommandResultSchema>;
+
+export const DependencyUpdateResultSchema = z.object({
+  runId: z.string().regex(/^run-[0-9a-f-]{36}$/),
+  planId: z.string().regex(/^plan-[a-f0-9]{64}$/),
+  status: z.literal("dependency_updated"),
+  packageName: z.literal("json5"),
+  fromVersion: z.string().min(1),
+  targetVersion: z.string().min(1),
+  manifestVersion: z.string().min(1),
+  lockfileVersion: z.string().min(1),
+  changedFiles: z.tuple([z.literal("package-lock.json"), z.literal("package.json")]),
+  unrelatedDependenciesChanged: z.literal(false),
+  sourceCheckoutClean: z.literal(true),
+  commandResult: DependencyCommandResultSchema,
+  diff: z.string().min(1).max(64 * 1024),
+  resultLogPath: z.string().min(1),
+  completedAt: z.string().datetime(),
+}).strict().superRefine((result, context) => {
+  if (result.planId.length === 0 || result.runId.length === 0) return;
+  if (result.manifestVersion !== result.targetVersion || result.lockfileVersion !== result.targetVersion) {
+    context.addIssue({ code: z.ZodIssueCode.custom, message: "Manifest and lockfile must match the approved target" });
+  }
+});
+
+export type DependencyUpdateResult = z.infer<typeof DependencyUpdateResultSchema>;
+
+export const DependencyUpdateRequestSchema = z.object({
+  planId: z.string().regex(/^plan-[a-f0-9]{64}$/),
+  runId: z.string().regex(/^run-[0-9a-f-]{36}$/),
+}).strict();
+
+export type DependencyUpdateRequest = z.infer<typeof DependencyUpdateRequestSchema>;
+
 export const NormalizedScanResultSchema = z.object({
   scanner: z.literal("osv-scanner"),
   scannerVersion: z.string().min(1),

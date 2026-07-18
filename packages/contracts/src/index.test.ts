@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   AffectednessAssessmentSchema,
+  DependencyUpdateResultSchema,
   IsolationRunSchema,
   NormalizedScanResultSchema,
   RemediationPlanSchema,
@@ -81,5 +82,32 @@ describe("contracts package", () => {
       },
       events,
     })).toThrow("approved plan");
+  });
+
+  it("rejects dependency updates that do not reach the approved version in both files", () => {
+    expect(() => DependencyUpdateResultSchema.parse({
+      runId: "run-00000000-0000-4000-8000-000000000009",
+      planId: `plan-${"a".repeat(64)}`,
+      status: "dependency_updated",
+      packageName: "json5",
+      fromVersion: "1.0.1",
+      targetVersion: "1.0.2",
+      manifestVersion: "1.0.2",
+      lockfileVersion: "1.0.1",
+      changedFiles: ["package-lock.json", "package.json"],
+      unrelatedDependenciesChanged: false,
+      sourceCheckoutClean: true,
+      commandResult: {
+        command: "npm install json5@1.0.2 --save-exact",
+        exitCode: 0,
+        durationMs: 10,
+        stdout: "updated",
+        stderr: "",
+        outputTruncated: false,
+      },
+      diff: "diff --git a/package.json b/package.json",
+      resultLogPath: "/safe/runs/audit/dependency.json",
+      completedAt: "2026-07-18T10:30:00.000Z",
+    })).toThrow("approved target");
   });
 });

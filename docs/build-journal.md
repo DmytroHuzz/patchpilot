@@ -105,3 +105,17 @@
 - The accepted run left its ignored audit artifact and separate worktree ready for the next patch issue; the bundled source checkout remained clean on `main` at its original commit.
 - No dependency update, source edit, automatic push, merge, multi-repository flow, or new AI work was added.
 - Scope expansions: none.
+
+## 2026-07-18 — Issue 9: approved npm dependency update
+
+- Acceptance target: move json5 to the exact planned version in both manifest and lockfile, keep unrelated dependencies unchanged, preserve the dependency diff, and leave the source checkout untouched.
+- Added a strict dependency-update result contract with run/plan identity, exact command result, before/after version proof, two-file boundary, unrelated-change fact, complete bounded diff, source-clean fact, and ignored result artifact.
+- The executor revalidates approval, isolation ID, branch, baseline, canonical paths, clean worktree, clean source checkout, and the exact displayed npm command before execution.
+- Before/after parsed JSON comparison removes only the json5 entries and requires every other manifest/lockfile value to remain structurally identical. Git must report exactly `package.json` and `package-lock.json`.
+- Git and npm run without a shell under timeout/output limits. Likely npm/GitHub/OpenAI tokens and credentialed registry URLs are redacted before bounded command output or failure text is retained.
+- Real temporary-Git tests prove exact command/cwd execution, source preservation, approval failure before command invocation, unrelated lockfile rejection, source-file rejection, version proof, and persisted diff.
+- A live registry run in the Issue #8 worktree changed json5 1.0.1 → 1.0.2 in both files, retained minimist 1.2.8, changed exactly two files, wrote the result artifact, and left the source checkout clean.
+- `npm run check` passed 39 tests across server and contracts plus all production builds. Clean-reset baseline tests/build and the live vulnerable OSV scan also passed.
+- Browser acceptance passed detect → investigate → approve → isolate → update. It displayed the exact command with exit 0, version proof, two changed files, zero unrelated changes, complete diff, clean-source badge, and next-step boundary with no browser log errors.
+- No compatibility source repair, regression test generation, post-patch test/build, rescan, branch commit, push, merge, other ecosystem, or new AI work was added.
+- Scope expansions: none.
