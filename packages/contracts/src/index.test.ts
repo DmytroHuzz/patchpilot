@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { NormalizedScanResultSchema, productName } from "./index.js";
+import { AffectednessAssessmentSchema, NormalizedScanResultSchema, productName } from "./index.js";
 
 describe("contracts package", () => {
   it("exports the product identity", () => {
@@ -9,5 +9,19 @@ describe("contracts package", () => {
   it("rejects incomplete normalized scan results", () => {
     expect(() => NormalizedScanResultSchema.parse({ scanner: "osv-scanner" })).toThrow();
   });
-});
 
+  it("rejects non-enumerated verdicts and incomplete uncertainty", () => {
+    const assessment = {
+      verdict: "not_affected",
+      confidence: "high",
+      rationale: "Unsupported conclusion",
+      supportingEvidenceIds: [],
+      counterEvidenceIds: [],
+      unknowns: [],
+      limitations: [],
+      recommendedNextChecks: ["Review input handling"],
+    };
+
+    expect(() => AffectednessAssessmentSchema.parse(assessment)).toThrow();
+  });
+});

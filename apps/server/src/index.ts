@@ -2,6 +2,7 @@ import { createReadStream } from "node:fs";
 import { stat } from "node:fs/promises";
 import { createServer } from "node:http";
 import path from "node:path";
+import { investigateRepository } from "./investigation/investigateRepository.js";
 import { scanRepository } from "./scanning/osvScanner.js";
 
 export const serviceName = "PatchPilot orchestrator";
@@ -29,6 +30,18 @@ const server = createServer(async (request, response) => {
     return;
   }
 
+  if (request.method === "POST" && request.url === "/api/demo/investigate") {
+    try {
+      const result = await investigateRepository({ repositoryPath: demoRoot, projectRoot: root });
+      response.writeHead(200, { "content-type": "application/json" });
+      response.end(JSON.stringify(result));
+    } catch (error) {
+      response.writeHead(500, { "content-type": "application/json" });
+      response.end(JSON.stringify({ error: error instanceof Error ? error.message : "Investigation failed" }));
+    }
+    return;
+  }
+
   const requestPath = request.url === "/" ? "/index.html" : (request.url ?? "/index.html");
   const filePath = path.resolve(webRoot, `.${requestPath}`);
   if (!filePath.startsWith(`${webRoot}${path.sep}`)) {
@@ -47,5 +60,5 @@ const server = createServer(async (request, response) => {
 });
 
 server.listen(port, "127.0.0.1", () => {
-  console.log(`PatchPilot Milestone 1: http://127.0.0.1:${port}`);
+  console.log(`PatchPilot Milestone 2: http://127.0.0.1:${port}`);
 });

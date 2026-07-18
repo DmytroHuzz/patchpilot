@@ -71,6 +71,32 @@ export const RepositoryEvidenceBundleSchema = z.object({
 
 export type RepositoryEvidenceBundle = z.infer<typeof RepositoryEvidenceBundleSchema>;
 
+export const AffectednessAssessmentSchema = z.object({
+  verdict: z.enum([
+    "likely_affected",
+    "possibly_affected",
+    "no_relevant_usage_found",
+    "insufficient_evidence",
+  ]),
+  confidence: z.enum(["low", "medium", "high"]),
+  rationale: z.string().min(1),
+  supportingEvidenceIds: z.array(z.string().min(1)).max(24),
+  counterEvidenceIds: z.array(z.string().min(1)).max(24),
+  unknowns: z.array(z.string().min(1)).min(1).max(12),
+  limitations: z.array(z.string().min(1)).min(1).max(12),
+  recommendedNextChecks: z.array(z.string().min(1)).min(1).max(12),
+}).strict();
+
+export type AffectednessAssessment = z.infer<typeof AffectednessAssessmentSchema>;
+
+export const AssessmentRunSchema = z.object({
+  model: z.literal("gpt-5.6"),
+  source: z.enum(["openai", "cached-demo"]),
+  assessment: AffectednessAssessmentSchema,
+}).strict();
+
+export type AssessmentRun = z.infer<typeof AssessmentRunSchema>;
+
 export const NormalizedScanResultSchema = z.object({
   scanner: z.literal("osv-scanner"),
   scannerVersion: z.string().min(1),
@@ -80,3 +106,12 @@ export const NormalizedScanResultSchema = z.object({
 });
 
 export type NormalizedScanResult = z.infer<typeof NormalizedScanResultSchema>;
+
+export const InvestigationResultSchema = z.object({
+  finding: VulnerabilityFindingSchema,
+  advisory: NormalizedAdvisorySchema,
+  evidence: RepositoryEvidenceBundleSchema,
+  assessmentRun: AssessmentRunSchema,
+}).strict();
+
+export type InvestigationResult = z.infer<typeof InvestigationResultSchema>;

@@ -66,3 +66,15 @@
 - Added a demo integration command that writes a validated evidence artifact and fails when the expected call site is missing.
 - No model call or affectedness verdict was added.
 - Scope expansions: none.
+
+## 2026-07-18 — Issue 6: structured affectedness assessment
+
+- Acceptance target: strict GPT‑5.6 Structured Output, citations limited to collected evidence IDs, visible unknowns/limitations, safe absence semantics, and a clear facts/evidence/interpretation UI boundary.
+- Added the current OpenAI JavaScript SDK and verified the Responses API `parse` contract with Zod-backed text formatting against the installed type definitions.
+- The live path targets explicit model alias `gpt-5.6`, uses medium reasoning effort, disables response storage, and sends only normalized advisory, package relationship, repository metadata, and bounded evidence.
+- Added post-schema guards for invented or duplicate evidence IDs, absence used as supporting evidence, unsupported not-affected prose, and verdicts that contradict deterministic call-site evidence.
+- No `OPENAI_API_KEY` was available during acceptance. Added an explicitly labeled checked-in contract fixture; it runs through the same schema and citation validators and the UI never labels it live.
+- `npm run check` passed 20 tests and all production builds. `npm run investigate:demo` passed from live OSV detection through the validated cached assessment.
+- Browser verification passed the scan → investigate click path. The three evidence items, likely-affected/medium interpretation, citations, unknowns, limitations, recommended checks, and fallback provenance rendered with no console errors.
+- No repository write occurs in the investigation path. No patch, approval, rescan-after-change, or report work began.
+- Scope expansions: none.

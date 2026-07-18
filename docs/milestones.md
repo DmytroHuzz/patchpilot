@@ -26,8 +26,10 @@
 
 - [x] Advisory facts normalize with an explicitly labeled cached fallback.
 - [x] Exact file/line evidence appears.
-- [ ] Structured assessment validates.
-- [ ] Uncertainty is visible.
+- [x] Structured assessment validates.
+- [x] Uncertainty is visible.
+
+**Acceptance passed 2026-07-18:** strict assessment and citation validation, deterministic fallback, live-model integration path, CLI pipeline, and browser investigation view all pass. M3 remains gated behind its own issue and explicit human approval flow.
 
 ## M3 — Patch and verification
 

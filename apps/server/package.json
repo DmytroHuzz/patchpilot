@@ -9,6 +9,7 @@
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
   "dependencies": {
-    "@patchpilot/contracts": "*"
+    "@patchpilot/contracts": "*",
+    "openai": "^6.48.0"
   }
 }

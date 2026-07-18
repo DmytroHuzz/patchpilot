@@ -1,6 +1,6 @@
 # Architecture
 
-This document grows only with implemented milestones. Model context construction, patch isolation, verification, and report generation remain placeholders until their milestones begin.
+This document grows only with implemented milestones. Patch isolation, verification, and report generation remain placeholders until their milestones begin.
 
 The Milestone 1 slice is: bundled npm fixture → OSV-Scanner subprocess → validated normalized finding → findings UI.
 
@@ -29,3 +29,12 @@ OSV and command output are deterministic facts. There is no model call or interp
 - Import, call-site, configuration, and absence evidence use stable IDs, repository-relative paths, exact positive line ranges, compact excerpts, and factual explanations.
 - Absence evidence explicitly states that a missed reference is not proof of non-applicability.
 - `npm run evidence:demo` writes the validated golden bundle to the ignored `runs/m2-evidence.json` artifact and fails unless the expected call site is present.
+
+## Implemented M2 interpretation boundary
+
+- The model receives exactly four context groups: normalized advisory, package relationship, repository metadata, and bounded evidence. Absolute repository paths, arbitrary source files, scanner output, and proof-of-concept content are excluded.
+- The OpenAI integration uses the Responses API, explicit `gpt-5.6` model alias, medium reasoning effort, disabled response storage, and Zod-backed Structured Outputs.
+- `AffectednessAssessment` permits only four bounded verdicts and requires rationale, confidence, evidence ID arrays, non-empty unknowns, non-empty limitations, and next checks.
+- Post-schema validation rejects invented or duplicate evidence IDs, absence evidence used to support affectedness, unsupported not-affected prose, and no-usage verdicts that contradict a deterministic call site.
+- If `OPENAI_API_KEY` is absent, the investigator loads an explicitly labeled `cached-demo` contract fixture and applies the same validators. It is never presented as a live model response.
+- `POST /api/demo/investigate` performs scan → advisory → evidence → assessment without repository writes. The UI separates deterministic facts, evidence, interpretation, uncertainty, and provenance.

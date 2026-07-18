@@ -4,7 +4,7 @@ PatchPilot investigates a known npm dependency vulnerability, proposes the small
 
 [GitHub repository](https://github.com/DmytroHuzz/patchpilot)
 
-> Milestone 1 complete: the bundled repository resets cleanly, produces one real OSV finding, and displays its normalized deterministic facts. AI affectedness analysis has not started.
+> Milestone 2 complete: the bundled repository produces one real OSV finding, exact repository evidence, and a strict GPT‑5.6 affectedness assessment with visible citations and uncertainty.
 
 ## Golden workflow
 
@@ -29,9 +29,7 @@ npm test
 npm run build
 ```
 
-Milestone-specific setup and demo commands will be documented once their acceptance criteria pass.
-
-## Run the Milestone 1 demo
+## Run the Milestone 2 demo
 
 Install the pinned OSV-Scanner 2.3.8 binary for macOS/Linux, verify the clean-reset scan, then launch the local UI:
 
@@ -43,7 +41,13 @@ npm run demo
 
 Alternatively, `./demo/run-demo.sh` performs the fixture reset, install, baseline checks, scanner setup, and UI launch in one command.
 
-Open `http://127.0.0.1:4173` and choose **Run deterministic scan**. The expected result is `GHSA-9c47-m6qq-7p4h` in direct dependency `json5@1.0.1`.
+Open `http://127.0.0.1:4173`, choose **Run deterministic scan**, then **Investigate affectedness**. The expected result is `GHSA-9c47-m6qq-7p4h` in direct dependency `json5@1.0.1`, with evidence at `src/theme.js:1` and `src/theme.js:8–10` and a `likely affected` interpretation.
+
+Without `OPENAI_API_KEY`, the demo uses an explicitly labeled, checked-in GPT‑5.6 contract fixture. With the key set, the same endpoint calls `gpt-5.6` through the OpenAI Responses API and validates its Structured Output. To inspect the complete JSON result directly:
+
+```bash
+npm run investigate:demo
+```
 
 The setup script verifies the official release checksum. Set `OSV_SCANNER_PATH` to use an existing compatible scanner binary instead.
 
