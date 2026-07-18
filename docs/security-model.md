@@ -34,3 +34,11 @@ PatchPilot will operate only inside a validated repository or isolated worktree,
 - Structured output and semantic validation restrict writes to one exact function replacement in `src/theme.js`. Imports, package changes, shell commands, dynamic execution, broad parsed-object spreads, stale source text, and edits outside the approved function fail closed.
 - The only repair probe is a direct, bounded `node --check src/theme.js` invocation. At most two attempts are allowed; after two failures or a later exception, the original source is restored and only the dependency update remains.
 - A passing syntax probe is a narrow syntax fact, not a test, build, vulnerability, exploitability, or security result. No automatic commit, push, merge, test generation, rescan, or security claim occurs in Issue #10.
+
+## Implemented targeted-test controls
+
+- The exact approval, isolation identity, dependency result, passing repair result, branch, baseline, canonical paths, source-clean state, and recorded diffs are revalidated before the test file changes.
+- Model context is limited to approved verification intent, deterministic patch facts, the bounded repaired function, the bounded existing test file, and fixed safe-fixture constraints. Absolute paths, scanner logs, and arbitrary repository files are excluded.
+- The validator allows one test block in `test/theme.test.js` using only benign `previewLabel: ignored` input. It rejects `__proto__`, constructor/prototype operations, pollution payloads, imports, dependencies, extra commands, process/network access, and broad test generation.
+- Only `node --test test/theme.test.js` may execute. Output is bounded and redacted; a nonzero exit restores the original test file, while a passing exit retains exactly the approved four-file diff.
+- This targeted pass is evidence for one mitigation behavior only. It is not the full suite, build, rescan, exploitability proof, or security guarantee; those claims remain blocked until later deterministic stages.

@@ -7,10 +7,11 @@ import type {
   InvestigationResult,
   NormalizedScanResult,
   RemediationProposal,
+  TargetedTestResult,
 } from "@patchpilot/contracts";
 import "./styles.css";
 
-type Status = "ready" | "scanning" | "investigating" | "planning" | "deciding" | "isolating" | "updating" | "repairing" | "error";
+type Status = "ready" | "scanning" | "investigating" | "planning" | "deciding" | "isolating" | "updating" | "repairing" | "testing" | "error";
 
 function sentenceCase(value: string): string {
   return value.replaceAll("_", " ");
@@ -23,6 +24,7 @@ function App() {
   const [isolation, setIsolation] = useState<IsolationRun>();
   const [dependencyUpdate, setDependencyUpdate] = useState<DependencyUpdateResult>();
   const [compatibilityRepair, setCompatibilityRepair] = useState<CompatibilityRepairResult>();
+  const [targetedTest, setTargetedTest] = useState<TargetedTestResult>();
   const [status, setStatus] = useState<Status>("ready");
   const [error, setError] = useState("");
 
@@ -47,6 +49,7 @@ function App() {
     setIsolation(undefined);
     setDependencyUpdate(undefined);
     setCompatibilityRepair(undefined);
+    setTargetedTest(undefined);
     try {
       setResult(await post<NormalizedScanResult>("/api/demo/scan"));
       setStatus("ready");
@@ -63,6 +66,7 @@ function App() {
     setIsolation(undefined);
     setDependencyUpdate(undefined);
     setCompatibilityRepair(undefined);
+    setTargetedTest(undefined);
     try {
       setInvestigation(await post<InvestigationResult>("/api/demo/investigate"));
       setStatus("ready");
@@ -145,6 +149,22 @@ function App() {
     }
   }
 
+  async function generateRegressionTest() {
+    if (!proposal || !isolation || !compatibilityRepair) return;
+    setStatus("testing");
+    setError("");
+    try {
+      setTargetedTest(await post<TargetedTestResult>("/api/demo/targeted-test", {
+        planId: proposal.id,
+        runId: isolation.id,
+      }));
+      setStatus("ready");
+    } catch (testError) {
+      setError(testError instanceof Error ? testError.message : "Targeted test generation failed");
+      setStatus("error");
+    }
+  }
+
   const finding = result?.findings.find(({ id }) => id === "GHSA-9c47-m6qq-7p4h");
   const assessment = investigation?.assessmentRun.assessment;
   const assessmentSource = investigation?.assessmentRun.source;
@@ -154,8 +174,8 @@ function App() {
     <div className="shell">
       <header>
         <span className="mark">P</span><strong>PatchPilot</strong>
-        <nav><span className="active">01 Detect</span><span className={finding ? "active" : ""}>02 Investigate</span><span className={proposal ? "active" : ""}>03 Approve</span><span className={isolation ? "active" : ""}>04 Isolate</span><span className={dependencyUpdate ? "active" : ""}>05 Update</span><span className={compatibilityRepair ? "active" : ""}>06 Repair</span></nav>
-        <span className="stage">M3 / SOURCE REPAIR</span>
+        <nav><span className="active">01 Detect</span><span className={finding ? "active" : ""}>02 Investigate</span><span className={proposal ? "active" : ""}>03 Approve</span><span className={isolation ? "active" : ""}>04 Isolate</span><span className={dependencyUpdate ? "active" : ""}>05 Update</span><span className={compatibilityRepair ? "active" : ""}>06 Repair</span><span className={targetedTest ? "active" : ""}>07 Test</span></nav>
+        <span className="stage">M3 / TARGETED TEST</span>
       </header>
       <main>
         <section className="hero">
@@ -169,7 +189,7 @@ function App() {
             <h2>patchpilot-golden-demo</h2>
             <p>Node.js · npm · direct dependency</p>
             <code>demo/vulnerable-node-app</code>
-            <button onClick={scanDemo} disabled={["scanning", "investigating", "planning", "deciding", "isolating", "updating", "repairing"].includes(status)}>
+            <button onClick={scanDemo} disabled={["scanning", "investigating", "planning", "deciding", "isolating", "updating", "repairing", "testing"].includes(status)}>
               {status === "scanning" ? "Scanning with OSV…" : "Run deterministic scan"}<span>→</span>
             </button>
             {error && <p className="error">{error}</p>}
@@ -463,8 +483,61 @@ function App() {
 
           <div className="repair-checkpoint">
             <div className="ready-icon">{compatibilityRepair.status === "repaired" ? "✓" : "×"}</div>
-            <div><strong>{compatibilityRepair.status === "repaired" ? "Source repair checkpoint complete." : "Repair stopped safely."}</strong><span>{compatibilityRepair.status === "repaired" ? "The approved function changed and syntax passes. Targeted regression-test generation is the next separate issue; no full verification claim is made yet." : compatibilityRepair.status === "failed_after_two_attempts" ? "Two failed attempts cannot continue silently. The original source was restored and the dependency diff remains reviewable." : "The model classified the failure as unrelated or insufficiently supported. No source diff was retained; the dependency update remains reviewable."}</span></div>
+            <div><strong>{compatibilityRepair.status === "repaired" ? "Source repair checkpoint complete." : "Repair stopped safely."}</strong><span>{compatibilityRepair.status === "repaired" ? "The approved function changed and syntax passes. One safe targeted test is the next separately gated action; no full verification claim is made yet." : compatibilityRepair.status === "failed_after_two_attempts" ? "Two failed attempts cannot continue silently. The original source was restored and the dependency diff remains reviewable." : "The model classified the failure as unrelated or insufficiently supported. No source diff was retained; the dependency update remains reviewable."}</span></div>
             <code>{compatibilityRepair.completedAt}</code>
+          </div>
+          {compatibilityRepair.status === "repaired" && !targetedTest && <div className="test-launch">
+            <div><strong>Repair checkpoint passed.</strong><span>Generate one benign allowlist regression test, then run only that test file.</span></div>
+            <button onClick={generateRegressionTest} disabled={status === "testing"}>
+              {status === "testing" ? "Generating and running test…" : "Add targeted regression test"}<span>→</span>
+            </button>
+          </div>}
+          {error && <div className="decision-error">{error}</div>}
+        </section>}
+
+        {targetedTest && <section className={`targeted-test ${targetedTest.status}`} aria-live="polite">
+          <div className="test-title">
+            <div><p className="eyebrow">07 · TARGETED REGRESSION TEST</p><h2>One test. Benign input.</h2></div>
+            <div className={`source-badge ${targetedTest.proposalRun.source === "openai" ? "live" : "cached"}`}>
+              <span>{targetedTest.proposalRun.source === "openai" ? "LIVE OPENAI" : "CACHED CONTRACT FIXTURE"}</span>
+              <strong>GPT‑5.6 · EXACTLY 1 TEST</strong>
+            </div>
+          </div>
+
+          <div className="test-facts">
+            <div><span>FILE</span><code>{targetedTest.file}</code></div>
+            <div><span>TESTS ADDED</span><strong>{targetedTest.status === "test_added_passed" ? "1" : "0"}</strong></div>
+            <div><span>TARGETED COMMAND</span><strong className={targetedTest.commandResult?.passed ? "passed" : "failed"}>{targetedTest.commandResult?.passed ? "✓ PASSED" : "× STOPPED"}</strong></div>
+            <div><span>SOURCE CHECKOUT</span><strong className="passed">✓ CLEAN</strong></div>
+          </div>
+
+          <div className="test-grid">
+            <article>
+              <p className="panel-label"><span>01</span> GENERATED TEST</p>
+              <strong className="test-name">{targetedTest.proposalRun.proposal.testName ?? "No test generated"}</strong>
+              <p>{targetedTest.proposalRun.proposal.explanation}</p>
+              <pre>{targetedTest.proposalRun.proposal.testText ?? "Generation stopped without an edit."}</pre>
+              <div className="safe-test-boundary"><strong>Non-weaponized fixture</strong><span>Uses only benign previewLabel: ignored input. Prototype-related keys are rejected before writes.</span></div>
+            </article>
+            <article>
+              <p className="panel-label"><span>02</span> TARGETED COMMAND FACT</p>
+              <code className="test-command">$ {targetedTest.commandResult?.command ?? "No command executed"}</code>
+              <div className="test-command-meta"><span>EXIT {targetedTest.commandResult?.exitCode ?? "—"}</span><span>{targetedTest.commandResult?.durationMs ?? 0} MS</span><span>{targetedTest.commandResult?.outputTruncated ? "OUTPUT TRUNCATED" : "OUTPUT COMPLETE"}</span></div>
+              <pre>{targetedTest.commandResult?.stdout || targetedTest.commandResult?.stderr || "No command output."}</pre>
+              <p className="panel-label diff-label"><span>03</span> PRESERVED TEST DIFF</p>
+              <pre>{targetedTest.testDiff || "No test diff retained; the original test file was restored."}</pre>
+            </article>
+          </div>
+
+          <div className="test-notes">
+            <div><p className="panel-label"><span>✓</span> SAFETY RATIONALE</p><ul>{targetedTest.proposalRun.proposal.safetyRationale.map((item) => <li key={item}>{item}</li>)}</ul></div>
+            <div><p className="panel-label"><span>?</span> REMAINING UNKNOWNS</p><ul>{targetedTest.proposalRun.proposal.remainingUnknowns.map((item) => <li key={item}>{item}</li>)}</ul></div>
+          </div>
+
+          <div className="test-checkpoint">
+            <div className="ready-icon">{targetedTest.status === "test_added_passed" ? "✓" : "×"}</div>
+            <div><strong>{targetedTest.status === "test_added_passed" ? "Targeted regression checkpoint complete." : "Targeted test stopped safely."}</strong><span>{targetedTest.status === "test_added_passed" ? "The focused mitigation test passes and its diff is retained. Full tests, build, and rescan remain the next separate verification issue." : targetedTest.status === "test_failed_restored" ? "The focused command failed, so the generated test was restored and no passing claim is made." : "Generation stopped without a test write or command execution."}</span></div>
+            <code>{targetedTest.completedAt}</code>
           </div>
         </section>}
       </main>

@@ -135,3 +135,18 @@
 - Browser acceptance passed detect → investigate → approve → isolate → update → repair. The final panel visibly showed cached-contract provenance, attempt 1/2, passing syntax, clean source checkout, exact source diff, compatibility risk, remaining unknown, and the no-full-verification boundary with no browser warnings or errors.
 - The accepted browser run `run-3372aa96-f05a-4f1b-9d2d-21644a7fb5b3` remains in its isolated three-file state for Issue #11. Targeted test generation, full patched-repository verification, rescan, branch commit/push, merge, and reporting did not run.
 - Scope expansions: none.
+
+## 2026-07-18 — Issue 11: targeted regression-test generation
+
+- Acceptance target: add exactly one focused security regression test, use no weaponized behavior, pass it after the approved patch, retain the four-file review diff, and leave the source checkout clean.
+- Added strict proposal, command-result, request, and terminal-result contracts. Passing results require the retained four-file diff; failed commands require test restoration and the prior three-file checkpoint; stopped generation cannot write or execute.
+- GPT‑5.6 receives six bounded groups: approved verification intent, dependency facts, repair status, the exact repaired function, the existing test file, and fixed constraints. The explicit cached fixture uses the same schema and validator.
+- The validator permits one `it(...)` block in `test/theme.test.js`, requires benign `previewLabel: ignored` input plus supported-field and absence assertions, and rejects prototype-related keys, weaponized behavior, imports, commands, process/network access, and multiple tests.
+- The executor revalidates the exact approval/run chain, branch, baseline, canonical boundaries, source cleanliness, three-file checkpoint, and recorded dependency/source diffs. It runs only `node --test test/theme.test.js`, retains the test on exit 0, and restores it after failure or a mutation-time exception.
+- Real temporary-Git tests cover a retained passing test and failed-command restoration. The first focused model test expected a less-specific validation message; the stricter exactly-one-test guard fired first, so the assertion was corrected.
+- The first two live attempts stopped before writes because the bundled test file ends with two trailing newlines, while the insertion helper initially accepted one or none. The helper now preserves any trailing newlines, with regression coverage for zero, one, and two.
+- Live acceptance on `run-3372aa96-f05a-4f1b-9d2d-21644a7fb5b3` passed the real targeted command with exit 0, added only the ten-line benign test, retained exactly four changed files, wrote the ignored result artifact, and left the source checkout clean.
+- `npm run check` passed 53 tests across server and contracts plus all production builds. Clean-reset baseline tests/build and the live vulnerable OSV scan also passed; public repository files contain no internal-planning references.
+- Browser acceptance passed detect → investigate → approve → isolate → update → repair → test on the preserved accepted run `run-6098eda8-bc2e-440b-98ca-09689f64a806`. The final panel visibly showed exactly one benign test, its passing targeted command and complete output, the retained test diff, clean source checkout, safety rationale, remaining unknown, and the explicit full-verification boundary with no product error state.
+- No full patched-repository suite/build, rescan, report, branch commit/push, merge, other ecosystem, or general test generation was added.
+- Scope expansions: none.

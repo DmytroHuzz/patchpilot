@@ -1,6 +1,6 @@
 # Architecture
 
-This document grows only with implemented milestones. Targeted-test generation, full verification, rescan, and report generation remain placeholders until their issues begin.
+This document grows only with implemented milestones. Full verification, rescan, and report generation remain placeholders until their issues begin.
 
 The Milestone 1 slice is: bundled npm fixture → OSV-Scanner subprocess → validated normalized finding → findings UI.
 
@@ -74,3 +74,12 @@ OSV and command output are deterministic facts. There is no model call or interp
 - Validation permits only one exact replacement of `parseUserTheme` in `src/theme.js`. It requires the existing signature, `JSON5.parse(rawTheme)`, explicit `accent` and `density` handling with defaults, and rejects imports, dependency changes, commands, broad object spreads, and other unsafe constructs.
 - Each applied attempt runs only `node --check src/theme.js` without a shell. A retry receives only bounded, redacted source-path/caret/`SyntaxError` lines. The loop stops after two failures and restores the original source; an exception after mutation also restores it.
 - A successful run retains exactly `package-lock.json`, `package.json`, and `src/theme.js`, plus the source diff and attempt/probe audit in ignored run storage. No test generation, full suite/build, rescan, commit, or push runs in Issue #10.
+
+## Implemented M3 targeted-test boundary
+
+- `POST /api/demo/targeted-test` requires the same approved plan, ready isolation run, dependency result, and passing compatibility-repair result from the active server session. All plan/run identities must agree.
+- Before a test-file write, the executor rechecks canonical paths, branch, baseline, source cleanliness, the exact repaired three-file checkpoint, and byte-for-byte equality with the recorded dependency and source diffs.
+- GPT‑5.6 receives exactly six bounded groups: approved test intent, dependency facts, repair status, the repaired `parseUserTheme` function, the existing test file, and fixed constraints. The explicit cached fixture passes the same strict schema and semantic validator.
+- Validation permits exactly one `it(...)` block in `test/theme.test.js` before the final suite close. It requires a benign `previewLabel: ignored` input, supported `accent`/`density` assertions, and absence proof via `Object.hasOwn`; prototype-related keys, exploit payloads, imports, commands, processes, and multiple tests fail closed.
+- The executor runs only `node --test test/theme.test.js` without a shell under timeout/output limits. Exit 0 retains the four-file diff; any failed command restores the original test file and records the failure honestly.
+- The result artifact retains model provenance, safety rationale, uncertainty, exact test diff, bounded command facts, and source-clean state. No full suite, build, rescan, commit, push, or report runs in Issue #11.

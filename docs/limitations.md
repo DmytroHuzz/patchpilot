@@ -10,4 +10,5 @@
 - Isolation state is in-memory for the active server, while its branch, worktree, and ignored JSON audit artifact remain local until a later patch run or explicit cleanup.
 - The dependency step currently supports only the golden direct dependency `json5` and the exact approved version command.
 - Compatibility repair is limited to the golden `parseUserTheme` function and a syntax-only probe. It cannot diagnose arbitrary upgrade breakage and stops after two failed attempts.
-- The current flow stops after the syntax-checked dependency and source diff. Targeted tests, full tests, build, rescan, commit, automatic push, and merge remain later or explicitly excluded steps.
+- Test generation is limited to one benign allowlist regression in the bundled test file. It does not generate exploit payloads or general test suites.
+- The current flow stops after the focused targeted test passes. Full tests, build, rescan, commit, automatic push, and merge remain later or explicitly excluded steps.

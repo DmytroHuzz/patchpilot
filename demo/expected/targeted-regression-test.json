@@ -1,0 +1,19 @@
+{
+  "model": "gpt-5.6",
+  "source": "cached-demo",
+  "proposal": {
+    "action": "add_test",
+    "classification": "mitigation_regression",
+    "explanation": "Use a benign unsupported previewLabel field to verify that the repaired input boundary returns only the supported accent and density fields.",
+    "file": "test/theme.test.js",
+    "insertion": "before_final_suite_close",
+    "testName": "does not copy unsupported theme fields",
+    "testText": "  it(\"does not copy unsupported theme fields\", () => {\n    const theme = parseUserTheme(\"{accent: '#ffb86c', density: 'compact', previewLabel: 'ignored'}\");\n\n    assert.deepEqual(theme, {\n      accent: \"#ffb86c\",\n      density: \"compact\",\n    });\n    assert.equal(Object.hasOwn(theme, \"previewLabel\"), false);\n  });",
+    "safetyRationale": [
+      "The input uses a benign application-level field and no prototype-related key or exploit payload."
+    ],
+    "remainingUnknowns": [
+      "This focused test does not cover callers or theme fields outside the bundled demo repository."
+    ]
+  }
+}

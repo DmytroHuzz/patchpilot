@@ -7,6 +7,7 @@ import {
   DependencyUpdateRequestSchema,
   IsolationRequestSchema,
   RemediationDecisionRequestSchema,
+  TargetedTestRequestSchema,
 } from "@patchpilot/contracts";
 import { investigateRepository } from "./investigation/investigateRepository.js";
 import { RemediationApprovalStore } from "./remediation/approvalGate.js";
@@ -14,6 +15,7 @@ import { createRemediationProposal } from "./remediation/createRemediationPropos
 import { createIsolatedGitWorkspace, IsolationRunStore } from "./remediation/isolateRepository.js";
 import { applyApprovedDependencyUpdate, DependencyUpdateStore } from "./remediation/updateDependency.js";
 import { CompatibilityRepairStore, runCompatibilityRepairLoop } from "./remediation/repairCompatibilityLoop.js";
+import { generateTargetedRegressionTest, TargetedTestStore } from "./remediation/generateTargetedRegressionTest.js";
 import { scanRepository } from "./scanning/osvScanner.js";
 
 export const serviceName = "PatchPilot orchestrator";
@@ -25,6 +27,7 @@ const approvalStore = new RemediationApprovalStore();
 const isolationRunStore = new IsolationRunStore();
 const dependencyUpdateStore = new DependencyUpdateStore();
 const compatibilityRepairStore = new CompatibilityRepairStore();
+const targetedTestStore = new TargetedTestStore();
 
 const contentTypes: Record<string, string> = {
   ".css": "text/css; charset=utf-8",
@@ -195,6 +198,42 @@ const server = createServer(async (request, response) => {
     return;
   }
 
+  if (request.method === "POST" && request.url === "/api/demo/targeted-test") {
+    try {
+      const testRequest = TargetedTestRequestSchema.parse(await readJsonBody(request));
+      const existing = targetedTestStore.getByRun(testRequest.runId);
+      if (existing) {
+        if (existing.planId !== testRequest.planId) throw new Error("Targeted test run does not match the requested approved plan");
+        response.writeHead(200, { "content-type": "application/json" });
+        response.end(JSON.stringify(existing));
+        return;
+      }
+      const proposal = approvalStore.get(testRequest.planId);
+      const isolationRun = isolationRunStore.getById(testRequest.runId);
+      const dependencyUpdate = dependencyUpdateStore.getByRun(testRequest.runId);
+      const compatibilityRepair = compatibilityRepairStore.getByRun(testRequest.runId);
+      if (!proposal || !isolationRun || !dependencyUpdate || !compatibilityRepair) {
+        throw new Error("Approved repaired isolation run is unknown or expired");
+      }
+      const result = await generateTargetedRegressionTest({
+        proposal,
+        isolationRun,
+        dependencyUpdate,
+        compatibilityRepair,
+        boundaryRoot: root,
+        resultRoot: path.join(root, "runs/audit"),
+        fixturePath: path.join(root, "demo/expected/targeted-regression-test.json"),
+      });
+      const stored = targetedTestStore.register(result);
+      response.writeHead(200, { "content-type": "application/json" });
+      response.end(JSON.stringify(stored));
+    } catch (error) {
+      response.writeHead(400, { "content-type": "application/json" });
+      response.end(JSON.stringify({ error: error instanceof Error ? error.message : "Targeted test generation failed" }));
+    }
+    return;
+  }
+
   const requestPath = request.url === "/" ? "/index.html" : (request.url ?? "/index.html");
   const filePath = path.resolve(webRoot, `.${requestPath}`);
   if (!filePath.startsWith(`${webRoot}${path.sep}`)) {
@@ -213,5 +252,5 @@ const server = createServer(async (request, response) => {
 });
 
 server.listen(port, "127.0.0.1", () => {
-  console.log(`PatchPilot Milestone 3 bounded source repair: http://127.0.0.1:${port}`);
+  console.log(`PatchPilot Milestone 3 targeted regression test: http://127.0.0.1:${port}`);
 });

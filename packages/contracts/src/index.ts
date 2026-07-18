@@ -400,6 +400,103 @@ export const CompatibilityRepairRequestSchema = z.object({
 
 export type CompatibilityRepairRequest = z.infer<typeof CompatibilityRepairRequestSchema>;
 
+export const TargetedTestProposalSchema = z.object({
+  action: z.enum(["add_test", "stop_unrelated", "stop_insufficient_evidence"]),
+  classification: z.enum(["mitigation_regression", "unrelated_failure", "insufficient_evidence"]),
+  explanation: z.string().min(1).max(2000),
+  file: z.literal("test/theme.test.js").nullable(),
+  insertion: z.literal("before_final_suite_close").nullable(),
+  testName: z.string().min(1).max(160).nullable(),
+  testText: z.string().min(1).max(4096).nullable(),
+  safetyRationale: z.array(z.string().min(1)).min(1).max(6),
+  remainingUnknowns: z.array(z.string().min(1)).min(1).max(6),
+}).strict().superRefine((proposal, context) => {
+  if (proposal.action === "add_test") {
+    if (proposal.classification !== "mitigation_regression") {
+      context.addIssue({ code: z.ZodIssueCode.custom, message: "Added tests require a mitigation-regression classification" });
+    }
+    if (proposal.file === null || proposal.insertion === null || proposal.testName === null || proposal.testText === null) {
+      context.addIssue({ code: z.ZodIssueCode.custom, message: "Added tests require file, insertion, name, and text" });
+    }
+  } else if (proposal.file !== null || proposal.insertion !== null || proposal.testName !== null || proposal.testText !== null) {
+    context.addIssue({ code: z.ZodIssueCode.custom, message: "Stopped test generation cannot include an edit" });
+  }
+  if (proposal.action === "stop_unrelated" && proposal.classification !== "unrelated_failure") {
+    context.addIssue({ code: z.ZodIssueCode.custom, message: "Unrelated stops require an unrelated-failure classification" });
+  }
+  if (proposal.action === "stop_insufficient_evidence" && proposal.classification !== "insufficient_evidence") {
+    context.addIssue({ code: z.ZodIssueCode.custom, message: "Insufficient-evidence stops require the matching classification" });
+  }
+});
+
+export type TargetedTestProposal = z.infer<typeof TargetedTestProposalSchema>;
+
+export const TargetedTestProposalRunSchema = z.object({
+  model: z.literal("gpt-5.6"),
+  source: z.enum(["openai", "cached-demo"]),
+  proposal: TargetedTestProposalSchema,
+}).strict();
+
+export type TargetedTestProposalRun = z.infer<typeof TargetedTestProposalRunSchema>;
+
+export const TargetedTestCommandResultSchema = z.object({
+  command: z.literal("node --test test/theme.test.js"),
+  exitCode: z.number().int(),
+  passed: z.boolean(),
+  durationMs: z.number().int().nonnegative(),
+  stdout: z.string().max(32 * 1024),
+  stderr: z.string().max(32 * 1024),
+  outputTruncated: z.boolean(),
+}).strict().superRefine((result, context) => {
+  if (result.passed !== (result.exitCode === 0)) {
+    context.addIssue({ code: z.ZodIssueCode.custom, message: "Targeted test pass state must match its exit code" });
+  }
+});
+
+export type TargetedTestCommandResult = z.infer<typeof TargetedTestCommandResultSchema>;
+
+export const TargetedTestResultSchema = z.object({
+  runId: z.string().regex(/^run-[0-9a-f-]{36}$/),
+  planId: z.string().regex(/^plan-[a-f0-9]{64}$/),
+  status: z.enum(["test_added_passed", "test_failed_restored", "stopped"]),
+  file: z.literal("test/theme.test.js"),
+  proposalRun: TargetedTestProposalRunSchema,
+  commandResult: TargetedTestCommandResultSchema.nullable(),
+  changedFiles: z.array(z.enum(["package-lock.json", "package.json", "src/theme.js", "test/theme.test.js"])),
+  sourceCheckoutClean: z.literal(true),
+  testRestored: z.boolean(),
+  testDiff: z.string().max(64 * 1024),
+  resultLogPath: z.string().min(1),
+  completedAt: z.string().datetime(),
+}).strict().superRefine((result, context) => {
+  const dependencyAndSource = "package-lock.json,package.json,src/theme.js";
+  const fullPatch = `${dependencyAndSource},test/theme.test.js`;
+  if (result.status === "test_added_passed") {
+    if (result.proposalRun.proposal.action !== "add_test" || result.commandResult?.passed !== true || result.testRestored || result.testDiff.length === 0 || result.changedFiles.join(",") !== fullPatch) {
+      context.addIssue({ code: z.ZodIssueCode.custom, message: "Passing targeted tests require the retained approved four-file diff" });
+    }
+  }
+  if (result.status === "test_failed_restored") {
+    if (result.proposalRun.proposal.action !== "add_test" || result.commandResult?.passed !== false || !result.testRestored || result.testDiff !== "" || result.changedFiles.join(",") !== dependencyAndSource) {
+      context.addIssue({ code: z.ZodIssueCode.custom, message: "Failed targeted tests must restore the test file" });
+    }
+  }
+  if (result.status === "stopped") {
+    if (result.proposalRun.proposal.action === "add_test" || result.commandResult !== null || result.testRestored || result.testDiff !== "" || result.changedFiles.join(",") !== dependencyAndSource) {
+      context.addIssue({ code: z.ZodIssueCode.custom, message: "Stopped test generation cannot retain or execute a test" });
+    }
+  }
+});
+
+export type TargetedTestResult = z.infer<typeof TargetedTestResultSchema>;
+
+export const TargetedTestRequestSchema = z.object({
+  planId: z.string().regex(/^plan-[a-f0-9]{64}$/),
+  runId: z.string().regex(/^run-[0-9a-f-]{36}$/),
+}).strict();
+
+export type TargetedTestRequest = z.infer<typeof TargetedTestRequestSchema>;
+
 export const NormalizedScanResultSchema = z.object({
   scanner: z.literal("osv-scanner"),
   scannerVersion: z.string().min(1),
