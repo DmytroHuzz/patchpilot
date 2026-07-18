@@ -1,0 +1,13 @@
+name: Bug
+description: Report a reproducible PatchPilot defect
+body:
+  - type: textarea
+    attributes: { label: Reproduction, description: Include reset state and commands. }
+    validations: { required: true }
+  - type: textarea
+    attributes: { label: Expected behavior }
+    validations: { required: true }
+  - type: textarea
+    attributes: { label: Actual behavior }
+    validations: { required: true }
+

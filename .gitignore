@@ -1,0 +1,13 @@
+node_modules/
+dist/
+*.tsbuildinfo
+coverage/
+.env
+.env.*
+!.env.example
+.DS_Store
+runs/*
+!runs/.gitkeep
+demo/vulnerable-node-app/node_modules/
+demo/vulnerable-node-app/.patchpilot-reset/
+tools/bin/

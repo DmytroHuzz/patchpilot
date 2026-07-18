@@ -1,0 +1,10 @@
+name: Demo smoke
+on:
+  workflow_dispatch:
+jobs:
+  milestone-1:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: echo "Enabled when the M1 clean-reset scanner acceptance test is committed."
+

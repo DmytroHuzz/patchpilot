@@ -1,0 +1,16 @@
+name: Golden-path change
+description: Propose a scoped workflow improvement
+body:
+  - type: textarea
+    attributes: { label: User value }
+    validations: { required: true }
+  - type: textarea
+    attributes: { label: Acceptance criteria }
+    validations: { required: true }
+  - type: textarea
+    attributes: { label: Demo relevance }
+    validations: { required: true }
+  - type: textarea
+    attributes: { label: Explicit non-goals }
+    validations: { required: true }
+
