@@ -1,13 +1,14 @@
 import React, { useState } from "react";
 import { createRoot } from "react-dom/client";
 import type {
+  IsolationRun,
   InvestigationResult,
   NormalizedScanResult,
   RemediationProposal,
 } from "@patchpilot/contracts";
 import "./styles.css";
 
-type Status = "ready" | "scanning" | "investigating" | "planning" | "deciding" | "error";
+type Status = "ready" | "scanning" | "investigating" | "planning" | "deciding" | "isolating" | "error";
 
 function sentenceCase(value: string): string {
   return value.replaceAll("_", " ");
@@ -17,6 +18,7 @@ function App() {
   const [result, setResult] = useState<NormalizedScanResult>();
   const [investigation, setInvestigation] = useState<InvestigationResult>();
   const [proposal, setProposal] = useState<RemediationProposal>();
+  const [isolation, setIsolation] = useState<IsolationRun>();
   const [status, setStatus] = useState<Status>("ready");
   const [error, setError] = useState("");
 
@@ -38,6 +40,7 @@ function App() {
     setError("");
     setInvestigation(undefined);
     setProposal(undefined);
+    setIsolation(undefined);
     try {
       setResult(await post<NormalizedScanResult>("/api/demo/scan"));
       setStatus("ready");
@@ -51,6 +54,7 @@ function App() {
     setStatus("investigating");
     setError("");
     setProposal(undefined);
+    setIsolation(undefined);
     try {
       setInvestigation(await post<InvestigationResult>("/api/demo/investigate"));
       setStatus("ready");
@@ -88,6 +92,19 @@ function App() {
     }
   }
 
+  async function isolateApprovedPlan() {
+    if (!proposal || proposal.status !== "approved") return;
+    setStatus("isolating");
+    setError("");
+    try {
+      setIsolation(await post<IsolationRun>("/api/demo/isolate", { planId: proposal.id }));
+      setStatus("ready");
+    } catch (isolationError) {
+      setError(isolationError instanceof Error ? isolationError.message : "Isolation failed");
+      setStatus("error");
+    }
+  }
+
   const finding = result?.findings.find(({ id }) => id === "GHSA-9c47-m6qq-7p4h");
   const assessment = investigation?.assessmentRun.assessment;
   const assessmentSource = investigation?.assessmentRun.source;
@@ -97,8 +114,8 @@ function App() {
     <div className="shell">
       <header>
         <span className="mark">P</span><strong>PatchPilot</strong>
-        <nav><span className="active">01 Detect</span><span className={finding ? "active" : ""}>02 Investigate</span><span className={proposal ? "active" : ""}>03 Approve</span></nav>
-        <span className="stage">M3 / HUMAN GATE</span>
+        <nav><span className="active">01 Detect</span><span className={finding ? "active" : ""}>02 Investigate</span><span className={proposal ? "active" : ""}>03 Approve</span><span className={isolation ? "active" : ""}>04 Isolate</span></nav>
+        <span className="stage">M3 / ISOLATED EXECUTION</span>
       </header>
       <main>
         <section className="hero">
@@ -112,7 +129,7 @@ function App() {
             <h2>patchpilot-golden-demo</h2>
             <p>Node.js · npm · direct dependency</p>
             <code>demo/vulnerable-node-app</code>
-            <button onClick={scanDemo} disabled={["scanning", "investigating", "planning", "deciding"].includes(status)}>
+            <button onClick={scanDemo} disabled={["scanning", "investigating", "planning", "deciding", "isolating"].includes(status)}>
               {status === "scanning" ? "Scanning with OSV…" : "Run deterministic scan"}<span>→</span>
             </button>
             {error && <p className="error">{error}</p>}
@@ -259,12 +276,57 @@ function App() {
           </div> : <div className={`decision-result ${proposal.status}`}>
             <div><span>{proposal.status === "approved" ? "✓" : "×"}</span></div>
             <div>
-              <strong>{proposal.status === "approved" ? "Approval recorded. Patch gate may proceed next." : "Plan cancelled. Repository remains unchanged."}</strong>
-              <p>{proposal.status === "approved" ? "No patch has started; isolated Git setup is the next separately reviewed issue." : "A cancelled decision cannot be converted into approval. Generate a new plan after restarting the demo."}</p>
+              <strong>{proposal.status === "approved" ? "Approval recorded. The exact plan may enter isolation." : "Plan cancelled. Repository remains unchanged."}</strong>
+              <p>{proposal.status === "approved" ? "Create a dedicated branch and worktree before any dependency or source change." : "A cancelled decision cannot be converted into approval. Generate a new plan after restarting the demo."}</p>
               <code>{proposal.approval?.recordedAt}</code>
             </div>
           </div>}
+          {proposal.status === "approved" && !isolation && <div className="isolation-launch">
+            <div>
+              <strong>Approval boundary passed.</strong>
+              <span>The source checkout must be clean. Isolation creates a local branch and separate worktree only.</span>
+            </div>
+            <button className="approve-button" onClick={isolateApprovedPlan} disabled={status === "isolating"}>
+              {status === "isolating" ? "Validating and isolating…" : "Create isolated workspace"}<span>→</span>
+            </button>
+          </div>}
           {error && <div className="decision-error">{error}</div>}
+        </section>}
+
+        {isolation && <section className="isolation" aria-live="polite">
+          <div className="isolation-title">
+            <div><p className="eyebrow">04 · CONTROLLED GIT ISOLATION</p><h2>Clean source. Separate runway.</h2></div>
+            <div className="isolation-badge"><span>✓ SOURCE CHECKOUT CLEAN</span><strong>WORKTREE READY</strong></div>
+          </div>
+
+          <div className="isolation-facts">
+            <div><span>BASELINE</span><code>{isolation.baselineCommit.slice(0, 12)}</code></div>
+            <div><span>SOURCE BRANCH</span><strong>{isolation.sourceBranch}</strong></div>
+            <div><span>ISOLATED BRANCH</span><code>{isolation.branchName}</code></div>
+          </div>
+
+          <div className="isolation-grid">
+            <article>
+              <p className="panel-label"><span>01</span> VALIDATED BOUNDARIES</p>
+              <dl>
+                <div><dt>Worktree</dt><dd>runs/worktrees/{isolation.id}</dd></div>
+                <div><dt>Selected repository</dt><dd>demo/vulnerable-node-app</dd></div>
+                <div><dt>Audit record</dt><dd>runs/audit/{isolation.id}.json</dd></div>
+              </dl>
+            </article>
+            <article>
+              <p className="panel-label"><span>02</span> ACTION AUDIT</p>
+              <ol className="audit-list">{isolation.events.map((event) => <li key={event.sequence}>
+                <span>✓</span><div><strong>{sentenceCase(event.action)}</strong><p>{event.detail}</p></div>
+              </li>)}</ol>
+            </article>
+          </div>
+
+          <div className="isolation-ready">
+            <div className="ready-icon">◇</div>
+            <div><strong>No patch has been applied.</strong><span>All future writes are constrained to the isolated repository. Automatic push and merge remain disabled.</span></div>
+            <code>{isolation.id}</code>
+          </div>
         </section>}
       </main>
     </div>

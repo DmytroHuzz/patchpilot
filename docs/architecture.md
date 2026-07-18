@@ -1,6 +1,6 @@
 # Architecture
 
-This document grows only with implemented milestones. Patch isolation, verification, and report generation remain placeholders until their milestones begin.
+This document grows only with implemented milestones. Patch application, verification, and report generation remain placeholders until their issues begin.
 
 The Milestone 1 slice is: bundled npm fixture → OSV-Scanner subprocess → validated normalized finding → findings UI.
 
@@ -47,3 +47,12 @@ OSV and command output are deterministic facts. There is no model call or interp
 - A plan ID is the SHA-256 digest of the exact validated plan. Approval records bind a decision and timestamp to that ID; tampered, missing, awaiting, or cancelled proposals fail the reusable write gate.
 - Approval state is intentionally in-memory for the single demo session. Restarting the server clears it.
 - `POST /api/demo/remediation-plan` is read-only. `POST /api/demo/remediation-decision` records `approved` or `cancelled`; neither endpoint creates a worktree or modifies the target repository.
+
+## Implemented M3 isolation boundary
+
+- `POST /api/demo/isolate` accepts only a known plan ID whose exact validated content has an `approved` record. Awaiting, cancelled, tampered, missing, and expired plans fail before filesystem mutation.
+- The executor resolves the selected repository and Git root canonically inside the configured project boundary. Worktree, isolated-repository, and audit paths must also remain inside explicitly configured run roots.
+- A full porcelain Git status rejects tracked or untracked source changes with an actionable message before run directories, branches, or worktrees are created.
+- The baseline commit and source branch are captured before `git worktree add -b` creates a unique `patchpilot/run-*` branch and separate worktree. Git is invoked directly without a shell, with timeout and output bounds.
+- The selected demo subdirectory is mapped to the same repository-relative location inside the new worktree. Baseline commit and branch are verified from the worktree before it is marked ready.
+- A validated JSON audit record stores approval, clean-state fact, baseline, paths, branch, and six ordered lifecycle events under ignored `runs/audit/`. No dependency or source change occurs in Issue #8.

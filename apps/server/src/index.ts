@@ -2,10 +2,11 @@ import { createReadStream } from "node:fs";
 import { stat } from "node:fs/promises";
 import { createServer, type IncomingMessage } from "node:http";
 import path from "node:path";
-import { RemediationDecisionRequestSchema } from "@patchpilot/contracts";
+import { IsolationRequestSchema, RemediationDecisionRequestSchema } from "@patchpilot/contracts";
 import { investigateRepository } from "./investigation/investigateRepository.js";
 import { RemediationApprovalStore } from "./remediation/approvalGate.js";
 import { createRemediationProposal } from "./remediation/createRemediationProposal.js";
+import { createIsolatedGitWorkspace, IsolationRunStore } from "./remediation/isolateRepository.js";
 import { scanRepository } from "./scanning/osvScanner.js";
 
 export const serviceName = "PatchPilot orchestrator";
@@ -14,6 +15,7 @@ const webRoot = path.join(root, "apps/web/dist");
 const demoRoot = path.join(root, "demo/vulnerable-node-app");
 const port = Number(process.env.PORT ?? 4173);
 const approvalStore = new RemediationApprovalStore();
+const isolationRunStore = new IsolationRunStore();
 
 const contentTypes: Record<string, string> = {
   ".css": "text/css; charset=utf-8",
@@ -91,6 +93,34 @@ const server = createServer(async (request, response) => {
     return;
   }
 
+  if (request.method === "POST" && request.url === "/api/demo/isolate") {
+    try {
+      const isolationRequest = IsolationRequestSchema.parse(await readJsonBody(request));
+      const existing = isolationRunStore.getByPlan(isolationRequest.planId);
+      if (existing) {
+        response.writeHead(200, { "content-type": "application/json" });
+        response.end(JSON.stringify(existing));
+        return;
+      }
+      const proposal = approvalStore.get(isolationRequest.planId);
+      if (!proposal) throw new Error("Approved remediation proposal is unknown or expired");
+      const run = await createIsolatedGitWorkspace({
+        proposal,
+        repositoryPath: demoRoot,
+        boundaryRoot: root,
+        worktreeRoot: path.join(root, "runs/worktrees"),
+        auditRoot: path.join(root, "runs/audit"),
+      });
+      const stored = isolationRunStore.register(run);
+      response.writeHead(200, { "content-type": "application/json" });
+      response.end(JSON.stringify(stored));
+    } catch (error) {
+      response.writeHead(400, { "content-type": "application/json" });
+      response.end(JSON.stringify({ error: error instanceof Error ? error.message : "Isolation failed" }));
+    }
+    return;
+  }
+
   const requestPath = request.url === "/" ? "/index.html" : (request.url ?? "/index.html");
   const filePath = path.resolve(webRoot, `.${requestPath}`);
   if (!filePath.startsWith(`${webRoot}${path.sep}`)) {
@@ -109,5 +139,5 @@ const server = createServer(async (request, response) => {
 });
 
 server.listen(port, "127.0.0.1", () => {
-  console.log(`PatchPilot Milestone 3 approval gate: http://127.0.0.1:${port}`);
+  console.log(`PatchPilot Milestone 3 isolated execution gate: http://127.0.0.1:${port}`);
 });

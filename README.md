@@ -4,7 +4,7 @@ PatchPilot investigates a known npm dependency vulnerability, proposes the small
 
 [GitHub repository](https://github.com/DmytroHuzz/patchpilot)
 
-> Milestone 3 in progress: detection and investigation are complete, and the full remediation plan now requires an explicit recorded human decision before any future repository write.
+> Milestone 3 in progress: detection and investigation are complete; an exact-plan approval now gates creation of a clean, boundary-contained Git branch and worktree before any patch write.
 
 ## Golden workflow
 
@@ -41,7 +41,7 @@ npm run demo
 
 Alternatively, `./demo/run-demo.sh` performs the fixture reset, install, baseline checks, scanner setup, and UI launch in one command.
 
-Open `http://127.0.0.1:4173`, choose **Run deterministic scan**, **Investigate affectedness**, and **Review remediation plan**. The expected result is `GHSA-9c47-m6qq-7p4h` in direct dependency `json5@1.0.1`, with evidence at `src/theme.js:1` and `src/theme.js:8–10`, a `likely affected` interpretation, and a locked plan targeting `json5@1.0.2`.
+Open `http://127.0.0.1:4173`, choose **Run deterministic scan**, **Investigate affectedness**, and **Review remediation plan**. Approve the exact plan, then choose **Create isolated workspace**. The expected result is `GHSA-9c47-m6qq-7p4h` in direct dependency `json5@1.0.1`, evidence at `src/theme.js:1` and `src/theme.js:8–10`, a `likely affected` interpretation, a plan targeting `json5@1.0.2`, and a clean `patchpilot/run-*` branch in a separate worktree.
 
 Without `OPENAI_API_KEY`, the demo uses an explicitly labeled, checked-in GPT‑5.6 contract fixture. With the key set, the same endpoint calls `gpt-5.6` through the OpenAI Responses API and validates its Structured Output. To inspect the complete JSON result directly:
 
@@ -55,7 +55,7 @@ To generate and validate the read-only remediation proposal without opening the 
 npm run plan:demo
 ```
 
-The proposal remains `awaiting_approval`. Approval and cancellation are recorded only in server memory for the current demo run; neither action applies a patch in Issue #7.
+The proposal remains `awaiting_approval`. Approval and cancellation are recorded only in server memory for the current demo run. After approval, isolation records baseline, branch, worktree, validated paths, and an ignored audit artifact under `runs/`; dependency and source patching remain separate later issues.
 
 The setup script verifies the official release checksum. Set `OSV_SCANNER_PATH` to use an existing compatible scanner binary instead.
 

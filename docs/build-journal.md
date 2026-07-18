@@ -91,3 +91,17 @@
 - Browser verification passed both decisions: cancel left the demo repository unchanged; approval recorded the exact plan and timestamp while explicitly stating no patch began. Browser logs were clean.
 - No worktree, dependency update, source edit, test generation, or other patch action was implemented.
 - Scope expansions: none.
+
+## 2026-07-18 — Issue 8: isolated Git branch/worktree flow
+
+- Acceptance target: reject dirty input clearly, create a dedicated branch/worktree only after exact approval, keep source/worktree/audit paths within validated boundaries, and leave the source checkout unchanged.
+- Added a strict isolation-run contract containing approval, clean-state fact, baseline commit, source and isolated branches, canonical paths, and six ordered audit events.
+- The executor checks approval before filesystem mutation, canonicalizes existing paths, validates new run roots, invokes Git without a shell under timeout/output limits, and verifies the created worktree's branch and baseline before returning ready.
+- Real temporary-Git tests prove awaiting approval fails before run storage exists, dirty untracked input creates no branch or directories, traversal and out-of-bound storage fail, and isolated writes do not appear in the source checkout.
+- The first focused test command used a repository-relative filter from the workspace package and matched no tests; reran it with the package-relative path. The real test then exposed macOS's `/var` to `/private/var` canonical alias. Updated boundary comparison to canonicalize both existing paths and retained the regression coverage.
+- Added the approved-plan isolation API and a fourth demo stage showing clean-source status, baseline, local branch, bounded paths, ordered audit events, and an explicit no-patch state.
+- `npm run check` passed 34 tests across server and contracts plus all production builds. The clean-reset baseline tests/build and live OSV scan also passed.
+- Browser acceptance passed the full detect → investigate → approve → isolate click path. The final view showed the clean source, exact baseline, unique branch, bounded paths, all six audit events, and explicit no-patch state with no browser log errors.
+- The accepted run left its ignored audit artifact and separate worktree ready for the next patch issue; the bundled source checkout remained clean on `main` at its original commit.
+- No dependency update, source edit, automatic push, merge, multi-repository flow, or new AI work was added.
+- Scope expansions: none.

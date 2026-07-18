@@ -159,6 +159,63 @@ export const RemediationDecisionRequestSchema = z.object({
 
 export type RemediationDecisionRequest = z.infer<typeof RemediationDecisionRequestSchema>;
 
+export const IsolationAuditEventSchema = z.object({
+  sequence: z.number().int().positive(),
+  at: z.string().datetime(),
+  action: z.enum([
+    "approval_validated",
+    "paths_validated",
+    "clean_tree_validated",
+    "baseline_captured",
+    "worktree_created",
+    "workspace_ready",
+  ]),
+  detail: z.string().min(1),
+}).strict();
+
+export type IsolationAuditEvent = z.infer<typeof IsolationAuditEventSchema>;
+
+export const IsolationRunSchema = z.object({
+  id: z.string().regex(/^run-[0-9a-f-]{36}$/),
+  planId: z.string().regex(/^plan-[a-f0-9]{64}$/),
+  status: z.literal("ready"),
+  sourceRepositoryPath: z.string().min(1),
+  sourceGitRoot: z.string().min(1),
+  sourceBranch: z.string().min(1),
+  baselineCommit: z.string().regex(/^[a-f0-9]{40,64}$/),
+  branchName: z.string().regex(/^patchpilot\/run-[0-9a-f-]{36}$/),
+  worktreePath: z.string().min(1),
+  isolatedRepositoryPath: z.string().min(1),
+  auditLogPath: z.string().min(1),
+  sourceTreeClean: z.literal(true),
+  createdAt: z.string().datetime(),
+  approval: ApprovalRecordSchema,
+  events: z.array(IsolationAuditEventSchema).min(6).max(12),
+}).strict().superRefine((run, context) => {
+  if (run.planId !== run.approval.planId) {
+    context.addIssue({ code: z.ZodIssueCode.custom, message: "Isolation run must reference its approved plan" });
+  }
+  const expectedActions = [
+    "approval_validated",
+    "paths_validated",
+    "clean_tree_validated",
+    "baseline_captured",
+    "worktree_created",
+    "workspace_ready",
+  ];
+  if (run.events.some((event, index) => event.sequence !== index + 1 || event.action !== expectedActions[index])) {
+    context.addIssue({ code: z.ZodIssueCode.custom, message: "Isolation audit events must be complete and ordered" });
+  }
+});
+
+export type IsolationRun = z.infer<typeof IsolationRunSchema>;
+
+export const IsolationRequestSchema = z.object({
+  planId: z.string().regex(/^plan-[a-f0-9]{64}$/),
+}).strict();
+
+export type IsolationRequest = z.infer<typeof IsolationRequestSchema>;
+
 export const NormalizedScanResultSchema = z.object({
   scanner: z.literal("osv-scanner"),
   scannerVersion: z.string().min(1),
