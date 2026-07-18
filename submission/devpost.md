@@ -2,6 +2,10 @@
 
 ## Core fields
 
+- **Submission status:** Submitted
+- **Devpost submission ID:** `1102235`
+- **Devpost URL:** https://devpost.com/software/patchpilot-ord9wl
+- **Submitted at:** 2026-07-18T12:51:39.223-04:00
 - **Name:** PatchPilot
 - **Tagline:** Investigate dependency vulnerabilities, create the smallest safe patch, and prove it with tests.
 - **Category:** Developer Tools

@@ -61,3 +61,5 @@ The corrected 2:18.17 H.264/AAC cut is available as an [unlisted, judge-viewable
 ## Submission checklist
 
 See `docs/milestones.md` for the active checklist. Repository access, clean-clone instructions, license, repeatable reset, three rehearsals, green CI, judge-viewable sub-three-minute video, Devpost copy, repository/video links, `/feedback` reference, built-with list, acknowledgements, limitations, and pre-deadline submission are mandatory.
+
+PatchPilot was submitted on 2026-07-18 as Devpost submission `1102235`: <https://devpost.com/software/patchpilot-ord9wl>. Devpost's post-submit readback reports project state `published` and an OpenAI Build Week `submitted_at` timestamp of `2026-07-18T12:51:39.223-04:00`.

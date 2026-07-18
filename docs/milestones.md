@@ -56,4 +56,6 @@
 
 - [x] Sub-three-minute review MP4 rendered, technically verified, and uploaded to YouTube as an unlisted review link; public visibility remains approval-gated.
 - [x] Accessible repository, video, Devpost copy, built-with list, `/feedback` reference, and testing instructions complete.
-- [ ] Submission completed before 2026-07-21 20:00 Europe/Vienna internal freeze.
+- [x] Submission completed before 2026-07-21 20:00 Europe/Vienna internal freeze.
+
+**M5 passed 2026-07-18:** Devpost submission `1102235` is published at <https://devpost.com/software/patchpilot-ord9wl> for OpenAI Build Week in the Developer Tools category. The public MIT repository, corrected judge-viewable 2:18 video, main Codex session ID, built-with list, limitations, and local test instructions are attached.

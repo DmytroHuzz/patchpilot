@@ -289,3 +289,12 @@
 - Final acceptance passed: `npm run check` completed the documentation contract, typechecks, 62 tests, and production builds; `./scripts/verify-demo.sh` reset the fixture, passed baseline tests/build, and found the expected advisory; GitHub confirmed a public repository, MIT license, `main` default branch, and green CI at `8389aba`.
 - Submission is intentionally not yet claimed. The mandatory `Submitter Type` and `Country of Residence` fields require explicit user-provided legal identity information; no value was invented.
 - Scope expansions: none. No product feature, unrelated Devpost project, GitHub publication workflow, or video visibility changed.
+
+## 2026-07-18 — Issue 17 complete: OpenAI Build Week submission
+
+- The user explicitly supplied the two remaining legal identity answers: `Individual` and `Austria`. Recorded them verbatim; no identity field was inferred.
+- Committed and pushed the final metadata in `d285d19`, then waited for GitHub Actions run `29652762122` to pass on that exact commit. The local documentation contract also remained green.
+- Submitted project `patchpilot-ord9wl` to challenge `openai` with all required answers: submitter type, country, `Developer Tools`, public repository URL, no-credential local judge instructions, main Codex session ID `019f7422-123d-7242-a0cf-c7f6f237594b`, developer-tool platform/install/test details, and corrected video URL.
+- Devpost returned submission ID `1102235`, status `Submitted`, and timestamp `2026-07-18T12:51:39.223-04:00`. Post-submit readback reports project state `published`, the OpenAI Build Week relationship with the same submission timestamp, and <https://devpost.com/software/patchpilot-ord9wl> as the project URL.
+- Confirmed the unrelated `SCL Assistant` project remains in its prior `submission_draft` state. No unrelated Devpost record was changed.
+- M5 and the hackathon definition of done are complete before the internal freeze. Scope expansions: none.
