@@ -51,13 +51,13 @@ Issue #16 completed the 2:55 narration, exact 11-click storyboard, three consecu
 ## Submission requirements
 
 - Public judge-accessible repository with MIT license and verified clean-clone instructions.
-- Public YouTube video under three minutes with audio explaining Codex and GPT‑5.6.
+- Judge-viewable YouTube video under three minutes with audio explaining Codex and GPT‑5.6; the latest official announcement explicitly permits unlisted visibility.
 - Devpost Developer Tools entry with product description, repository and video links, built-with list, acknowledgements, and limitations.
 - Main Codex task `/feedback` reference and retained task ID.
 - Green CI, repeatable reset, three successful rehearsals, and final pre-deadline checklist.
 
-The corrected 2:18.17 H.264/AAC cut is available as an [unlisted YouTube review video](https://youtu.be/qxRCA4PA4LA), with reproducible render sources documented under [Submission video assets](../submission/README.md). Changing visibility to public remains explicitly approval-gated.
+The corrected 2:18.17 H.264/AAC cut is available as an [unlisted, judge-viewable YouTube video](https://youtu.be/qxRCA4PA4LA), with reproducible render sources documented under [Submission video assets](../submission/README.md). The July 18 official deadline announcement states that unlisted visibility is acceptable; public visibility is therefore not required for submission.
 
 ## Submission checklist
 
-See `docs/milestones.md` for the active checklist. Repository access, clean-clone instructions, license, repeatable reset, three rehearsals, green CI, public sub-three-minute video, Devpost copy, repository/video links, `/feedback` reference, built-with list, acknowledgements, limitations, and pre-deadline submission are mandatory.
+See `docs/milestones.md` for the active checklist. Repository access, clean-clone instructions, license, repeatable reset, three rehearsals, green CI, judge-viewable sub-three-minute video, Devpost copy, repository/video links, `/feedback` reference, built-with list, acknowledgements, limitations, and pre-deadline submission are mandatory.

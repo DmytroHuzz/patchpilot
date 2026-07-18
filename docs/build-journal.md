@@ -279,3 +279,13 @@
 - YouTube completed processing and the copyright check with no issues, then confirmed `Video published` at <https://youtu.be/qxRCA4PA4LA> with unlisted visibility.
 - The earlier unlisted upload was not deleted. It is no longer referenced by the repository and remains available for manual cleanup if explicitly requested.
 - Scope expansions: none. Product behavior, narration, public visibility, Devpost state, `/feedback`, and remote repository publication are unchanged.
+
+## 2026-07-18 — Issue 17 partial: Devpost submission preparation
+
+- Acceptance criteria restated: verify the live Build Week requirements and deadline, preserve the main Codex session ID, assemble honest judge-ready copy and testing instructions, create a separate PatchPilot project without touching unrelated entries, attach the repository/video/technology metadata and thumbnail, rerun acceptance, and stop only for legal identity fields that cannot be inferred.
+- Live Devpost checks confirmed submissions are open until `2026-07-22T00:00:00Z`, PatchPilot belongs in `Developer Tools`, the repository must be judge-accessible, the demo must stay under three minutes with audio covering Codex and GPT-5.6, and the main `/feedback` session ID is required. The July 18 organizer announcement explicitly states that an unlisted video is acceptable when its link is viewable.
+- Preserved primary task ID `019f7422-123d-7242-a0cf-c7f6f237594b` and prepared canonical submission copy in `submission/devpost.md`, including the product story, exact Codex/GPT-5.6 roles, safety model, limitations, built-with list, repository/video URLs, and judge setup instructions.
+- The authenticated account already contained an unrelated `SCL Assistant` draft. Left it unchanged and created a separate PatchPilot draft at <https://devpost.com/software/patchpilot-ord9wl> with the final name, tagline, description, built-with list, public repository, corrected unlisted video, and real handoff screenshot thumbnail.
+- Final acceptance passed: `npm run check` completed the documentation contract, typechecks, 62 tests, and production builds; `./scripts/verify-demo.sh` reset the fixture, passed baseline tests/build, and found the expected advisory; GitHub confirmed a public repository, MIT license, `main` default branch, and green CI at `8389aba`.
+- Submission is intentionally not yet claimed. The mandatory `Submitter Type` and `Country of Residence` fields require explicit user-provided legal identity information; no value was invented.
+- Scope expansions: none. No product feature, unrelated Devpost project, GitHub publication workflow, or video visibility changed.
